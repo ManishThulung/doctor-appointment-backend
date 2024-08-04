@@ -5,7 +5,6 @@ import helmet from "helmet";
 import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger.json";
-import registerRoutes from "./routes";
 import addErrorHandler, { notFoundRoutes } from "./middleware/error-handler";
 import sequelizeConnection from "./database";
 import hospitalRoutes from "./routes/HospitalRoutes";
@@ -47,8 +46,6 @@ export default class App {
    */
   private routes(): void {
     this.express.get("/", this.basePathRoute);
-    this.express.get("/web", this.parseRequestHeader, this.basePathRoute);
-    this.express.use("/", registerRoutes());
     this.express.use("/api/hospital", hospitalRoutes);
   }
 
@@ -62,25 +59,10 @@ export default class App {
     this.express.use(helmet({ contentSecurityPolicy: false }));
     this.express.use(express.json({ limit: "100mb" }));
     this.express.use(express.urlencoded({ limit: "100mb", extended: true }));
-    // add multiple cors options as per your use
     const corsOptions = {
-      origin: [
-        "http://localhost:8080/",
-        "http://example.com/",
-        "http://127.0.0.1:8080",
-      ],
+      origin: ["http://localhost:3000/", "http://127.0.0.1:3001"],
     };
     this.express.use(cors(corsOptions));
-  }
-
-  private parseRequestHeader(
-    req: express.Request,
-    res: express.Response,
-    next: Function
-  ): void {
-    // parse request header
-    // console.log(req.headers.access_token);
-    next();
   }
 
   private basePathRoute(

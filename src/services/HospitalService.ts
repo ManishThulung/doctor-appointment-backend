@@ -1,21 +1,17 @@
-import {
-  Enquiry,
-  EnquiryAttributes,
-  EnquiryCreationAttributes,
-} from "../database/models/Enquiry";
-import logger from "../lib/logger";
 import ApiError from "../abstractions/ApiError";
-import { StatusCodes } from "http-status-codes";
-import {
-  Hospital,
-  HospitalAttributes,
-  HospitalCreationAttributes,
-} from "../database/models/Hospital";
+import { HospitalCreationAttributes } from "../database/models/Hospital";
+import logger from "../lib/logger";
+import { Repository } from "../repository/Repository";
 
-export class HospitalService {
-  async getAll(): Promise<HospitalAttributes[]> {
+export class HospitalService<T> extends Repository<T> {
+  private hospitalService: T;
+  constructor({ repository, logger }) {
+    super(repository);
+    this.hospitalService = repository;
+  }
+  async getHospitals(): Promise<T[]> {
     try {
-      const hospitals = await Hospital.findAll();
+      const hospitals = await this.getAll({ deletedAt: null });
       return hospitals;
     } catch (error) {
       logger.error(error);
@@ -23,26 +19,26 @@ export class HospitalService {
     }
   }
 
-  async getById(id: string): Promise<HospitalAttributes> {
+  async getHospitalById(id: string): Promise<T> {
     try {
-      const hospitals = await Hospital.findOne({
-        where: {
-          id: id,
-        },
+      const hospital = await this.getOne({
+        id: id,
+        deletedAt: null,
       });
-      return hospitals;
+      if (!hospital) {
+        throw new ApiError("data not found", 404);
+      }
+      return hospital;
     } catch (error) {
       logger.error(error);
       throw error;
     }
   }
 
-  async create(
-    payload: HospitalCreationAttributes
-  ): Promise<HospitalAttributes> {
+  async createHospital(payload: HospitalCreationAttributes): Promise<T> {
     try {
-      const enquiry = await Hospital.create(payload);
-      return enquiry;
+      const hospital = await this.create<HospitalCreationAttributes>(payload);
+      return hospital;
     } catch (error) {
       logger.error(error);
       throw error;

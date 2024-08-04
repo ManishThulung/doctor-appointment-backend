@@ -1,14 +1,16 @@
-import { NextFunction, Router, Request, Response } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import HospitalController from "../controllers/HospitalController";
-import EnquiryController from "../controllers/EnquiryController";
 
 const router = Router();
 
 router.get("/", (req: Request, res: Response, next: NextFunction) => {
-  new HospitalController().getEnquiries(req, res, next);
+  new HospitalController().getHospitals(req, res, next);
 });
 router.get("/:id", (req: Request, res: Response, next: NextFunction) => {
-  new HospitalController().getEnquiry(req, res, next);
+  new HospitalController().getHospitalById(req, res, next);
+});
+router.post("/", (req: Request, res: Response, next: NextFunction) => {
+  new HospitalController().createHospital(req, res, next);
 });
 
 export default router;
