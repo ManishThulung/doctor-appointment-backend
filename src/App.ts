@@ -47,6 +47,7 @@ export default class App {
   private routes(): void {
     this.express.get("/", this.basePathRoute);
     this.express.use("/api/hospital", hospitalRoutes);
+    this.express.use("/api/user", hospitalRoutes);
   }
 
   /**

@@ -1,33 +1,34 @@
-import { DataTypes, Model, Optional, UUIDV4 } from "sequelize";
+import { DataTypes, Model, UUIDV4 } from "sequelize";
 import sequelize from "../index";
 
-interface EnquiryAttributes {
+interface UserAttributes {
   id: string;
   name: string;
-  subject: string;
-  body: string;
   email: string;
-  country: string;
+  password: string;
+  address: string;
+  deletedAt: Date | null;
 }
 
-interface EnquiryCreationAttributes extends Optional<EnquiryAttributes, "id"> {}
+interface UserCreationAttributes
+  extends Omit<UserAttributes, "id" | "deletedAt"> {}
 
-class Enquiry
-  extends Model<EnquiryAttributes, EnquiryCreationAttributes>
-  implements EnquiryAttributes
+class User
+  extends Model<UserAttributes, UserCreationAttributes>
+  implements UserAttributes
 {
   public id!: string;
   public name!: string;
-  public country!: string;
-  public subject!: string;
-  public body!: string;
   public email!: string;
+  public password!: string;
+  public address!: string;
+  public deletedAt!: Date;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-Enquiry.init(
+User.init(
   {
     id: {
       type: DataTypes.UUID,
@@ -38,11 +39,11 @@ Enquiry.init(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    country: {
+    address: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    subject: {
+    password: {
       type: DataTypes.STRING(200),
       allowNull: false,
     },
@@ -50,17 +51,17 @@ Enquiry.init(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    body: {
-      type: DataTypes.STRING(400),
-      allowNull: false,
+    deletedAt: {
+      type: DataTypes.DATE(),
+      allowNull: true,
     },
   },
   {
     sequelize,
-    modelName: "Enquiry",
-    tableName: "Enquiry",
+    modelName: "User",
+    tableName: "User",
     timestamps: true,
   }
 );
 
-export { Enquiry, EnquiryAttributes, EnquiryCreationAttributes };
+export { User, UserAttributes, UserCreationAttributes };
