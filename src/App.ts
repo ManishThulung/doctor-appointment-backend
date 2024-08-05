@@ -8,6 +8,8 @@ import swaggerDocument from "../swagger.json";
 import addErrorHandler, { notFoundRoutes } from "./middleware/error-handler";
 import sequelizeConnection from "./database";
 import hospitalRoutes from "./routes/HospitalRoutes";
+import userRoutes from "./routes/UserRoutes";
+import authRoutes from "./routes/AuthRoutes";
 
 export default class App {
   public express: express.Application;
@@ -47,7 +49,8 @@ export default class App {
   private routes(): void {
     this.express.get("/", this.basePathRoute);
     this.express.use("/api/hospital", hospitalRoutes);
-    this.express.use("/api/user", hospitalRoutes);
+    this.express.use("/api/user", userRoutes);
+    this.express.use("/api/auth", authRoutes);
   }
 
   /**
