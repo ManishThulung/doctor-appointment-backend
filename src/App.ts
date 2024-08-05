@@ -47,7 +47,7 @@ export default class App {
    * here register your all routes
    */
   private routes(): void {
-    this.express.get("/", this.basePathRoute);
+    this.express.get("/api", this.basePathRoute);
     this.express.use("/api/hospital", hospitalRoutes);
     this.express.use("/api/user", userRoutes);
     this.express.use("/api/auth", authRoutes);

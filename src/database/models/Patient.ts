@@ -2,26 +2,28 @@ import { DataTypes, Model, UUIDV4 } from "sequelize";
 import sequelize from "../index";
 import { Role } from "../../types/enums.types";
 
-interface UserAttributes {
+interface PatientAttributes {
   id: string;
   name: string;
   email: string;
   password: string;
+  address: string;
   role: Role;
   deletedAt: Date | null;
 }
 
-interface UserCreationAttributes
-  extends Omit<UserAttributes, "id" | "deletedAt" | "role"> {}
+interface PatientCreationAttributes
+  extends Omit<PatientAttributes, "id" | "deletedAt" | "role"> {}
 
-class User
-  extends Model<UserAttributes, UserCreationAttributes>
-  implements UserAttributes
+class Patient
+  extends Model<PatientAttributes, PatientCreationAttributes>
+  implements PatientAttributes
 {
   public id!: string;
   public name!: string;
   public email!: string;
   public password!: string;
+  public address!: string;
   public deletedAt!: Date;
   public role!: Role;
 
@@ -29,7 +31,7 @@ class User
   public readonly updatedAt!: Date;
 }
 
-User.init(
+Patient.init(
   {
     id: {
       type: DataTypes.UUID,
@@ -37,6 +39,10 @@ User.init(
       primaryKey: true,
     },
     name: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
+    address: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
@@ -53,17 +59,17 @@ User.init(
       allowNull: true,
     },
     role: {
-      type: DataTypes.ENUM(Role.Admin, Role.Doctor, Role.SuperAdmin, Role.User),
-      defaultValue: Role.User,
+      type: DataTypes.ENUM(Role.Admin, Role.Doctor, Role.SuperAdmin, Role.Patient),
+      defaultValue: Role.Patient,
       allowNull: false,
     },
   },
   {
     sequelize,
-    modelName: "User",
-    tableName: "User",
+    modelName: "Patient",
+    tableName: "Patient",
     timestamps: true,
   }
 );
 
-export { User, UserAttributes, UserCreationAttributes };
+export { Patient, PatientAttributes, PatientCreationAttributes };

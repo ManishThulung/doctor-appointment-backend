@@ -34,14 +34,4 @@ export class UserService<T> extends Repository<T> {
       throw error;
     }
   }
-
-  async createUser(payload: UserCreationAttributes): Promise<T> {
-    try {
-      const user = await this.create<UserCreationAttributes>(payload);
-      return user;
-    } catch (error) {
-      logger.error(error);
-      throw error;
-    }
-  }
 }

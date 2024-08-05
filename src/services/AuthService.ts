@@ -35,9 +35,19 @@ export class AuthService<T> extends Repository<T> {
   //   }
   // }
 
-  async login(payload: Omit<UserCreationAttributes, "name" | "address">): Promise<T> {
+  async login(payload: Omit<UserCreationAttributes, "name">): Promise<T> {
     try {
       const user = await this.create(payload);
+      return user;
+    } catch (error) {
+      logger.error(error);
+      throw error;
+    }
+  }
+
+  async registerUser(payload: UserCreationAttributes): Promise<T> {
+    try {
+      const user = await this.create<UserCreationAttributes>(payload);
       return user;
     } catch (error) {
       logger.error(error);

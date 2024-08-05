@@ -9,8 +9,18 @@ const router = Router();
 // router.get("/:id", (req: Request, res: Response, next: NextFunction) => {
 //   new AuthController().getUserById(req, res, next);
 // });
-router.post("/", (req: Request, res: Response, next: NextFunction) => {
-  new AuthController().login(req, res, next);
-});
+router.post(
+  "/user/login",
+  (req: Request, res: Response, next: NextFunction) => {
+    new AuthController().loginUser(req, res, next);
+  }
+);
+
+router.post(
+  "/user/register",
+  (req: Request, res: Response, next: NextFunction) => {
+    new AuthController().registerUser(req, res, next);
+  }
+);
 
 export default router;

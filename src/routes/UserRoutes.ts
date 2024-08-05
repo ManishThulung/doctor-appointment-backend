@@ -9,8 +9,8 @@ router.get("/", (req: Request, res: Response, next: NextFunction) => {
 router.get("/:id", (req: Request, res: Response, next: NextFunction) => {
   new UserController().getUserById(req, res, next);
 });
-router.post("/", (req: Request, res: Response, next: NextFunction) => {
-  new UserController().createUser(req, res, next);
-});
+// router.post("/", (req: Request, res: Response, next: NextFunction) => {
+//   new UserController().createUser(req, res, next);
+// });
 
 export default router;

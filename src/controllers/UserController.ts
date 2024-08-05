@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import { StatusCodes } from "http-status-codes";
 import { User, UserAttributes } from "../database/models/User";
 import logger from "../lib/logger";
 import { UserService } from "../services/UserService";
@@ -45,26 +44,26 @@ export default class UserController extends BaseController {
     }
   }
 
-  public async createUser(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      // const { name, email, password, address } = req.body;
-      // if (!name && !country) {
-      //   throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
-      // }
-      await this.user.createUser(req.body);
-      res.locals.data = {
-        success: true,
-        message: "Create successfully",
-      };
-      super.send(res, StatusCodes.CREATED);
-    } catch (err) {
-      next(err);
-    }
-  }
+  // public async createUser(
+  //   req: Request,
+  //   res: Response,
+  //   next: NextFunction
+  // ): Promise<void> {
+  //   try {
+  //     // const { name, email, password } = req.body;
+  //     // if (!name && !country) {
+  //     //   throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  //     // }
+  //     await this.user.createUser(req.body);
+  //     res.locals.data = {
+  //       success: true,
+  //       message: "Create successfully",
+  //     };
+  //     super.send(res, StatusCodes.CREATED);
+  //   } catch (err) {
+  //     next(err);
+  //   }
+  // }
 
   // /**
   //  *

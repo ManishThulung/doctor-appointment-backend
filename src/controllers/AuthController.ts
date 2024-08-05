@@ -5,16 +5,22 @@ import { User } from "../database/models/User";
 import logger from "../lib/logger";
 import { AuthService } from "../services/AuthService";
 import BaseController from "./BaseController";
+import { EncryptDecrypt } from "../utils/EncryptDecrypt";
+import { JwtToken } from "../utils/JwtToken";
 
 export default class AuthController extends BaseController {
-  private auth: AuthService<User>;
+  private authUser: AuthService<User>;
+  private hash: EncryptDecrypt;
+  private jwt: JwtToken;
 
   constructor() {
     super();
-    this.auth = new AuthService({
+    this.authUser = new AuthService({
       repository: User,
       logger,
     });
+    this.hash = new EncryptDecrypt();
+    this.jwt = new JwtToken();
   }
 
   // public async getUsers(
@@ -23,7 +29,7 @@ export default class AuthController extends BaseController {
   //   next: NextFunction
   // ): Promise<void> {
   //   try {
-  //     const users: UserAttributes[] = await this.auth.getUsers();
+  //     const users: UserAttributes[] = await this.authUser.getUsers();
   //     res.locals.data = users;
   //     this.send(res);
   //   } catch (err) {
@@ -38,7 +44,7 @@ export default class AuthController extends BaseController {
   // ): Promise<void> {
   //   try {
   //     const id = req.params.id;
-  //     const user: UserAttributes = await this.auth.getUserById(id);
+  //     const user: UserAttributes = await this.authUser.getUserById(id);
   //     res.locals.data = user;
   //     this.send(res);
   //   } catch (err) {
@@ -46,32 +52,71 @@ export default class AuthController extends BaseController {
   //   }
   // }
 
-  public async login(
+  public async loginUser(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { email, password } = req.body;
-      // if (!name && !country) {
-      //   throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
-      // }
-      const existUser = await this.auth.getOne({ email, deletedAt: null });
-      if (!existUser) {
+      const user = await this.authUser.getOne({ email, deletedAt: null });
+      if (!user) {
         throw new ApiError("Invalid credentials!", StatusCodes.NOT_FOUND);
       }
-      const user = await this.auth.login({ email, password });
 
-      const isPasswordCorrect = false;
+      const isPasswordCorrect = await this.hash.decryptData(
+        password,
+        user?.password
+      );
       if (!isPasswordCorrect) {
         throw new ApiError("Invalid credentials!", StatusCodes.NOT_FOUND);
       }
 
-      const accessToken = "sdf"; // user.generateAccessToken();
+      const payload = {
+        id: user.id,
+        role: user.role,
+        email: user.email,
+        name: user.name,
+      };
+      const accessToken = await this.jwt.generateToken(payload);
       res.locals.data = {
         accessToken,
       };
       super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async registerUser(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { email, password, name } = req.body;
+      const existUser = await this.authUser.getOne({ email, deletedAt: null });
+      if (existUser) {
+        throw new ApiError(
+          "User already exist! login instaead.",
+          StatusCodes.CONFLICT
+        );
+      }
+
+      const hashedPassword = await this.hash.encryptData(password);
+
+      const payload = {
+        email,
+        name,
+        password: hashedPassword,
+      };
+
+      await this.authUser.registerUser(payload);
+      res.locals.data = {
+        success: true,
+        message: "Email has been sent. Verify it",
+      };
+      super.send(res, StatusCodes.CREATED);
     } catch (err) {
       next(err);
     }
