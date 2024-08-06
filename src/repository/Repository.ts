@@ -29,6 +29,18 @@ export class Repository<T> {
     });
     return result;
   }
+  async getOneWithAssociation(
+    whereClause: any,
+    include: string[],
+    exclude: string[]
+  ): Promise<T> {
+    let result = await this.dbContext.findOne({
+      include,
+      where: whereClause,
+      attributes: { exclude: exclude },
+    });
+    return result;
+  }
   async create<S>(payload: S): Promise<T> {
     let result = await this.dbContext.create(payload);
     return result;

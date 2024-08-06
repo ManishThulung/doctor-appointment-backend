@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from "express";
-import { ReasonPhrases, StatusCodes } from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 import ApiError from "../abstractions/ApiError";
+import { Address, AddressAttributes } from "../database/models/Address";
 import { Hospital, HospitalAttributes } from "../database/models/Hospital";
 import logger from "../lib/logger";
+import { AddressService } from "../services/AddressService";
 import { HospitalService } from "../services/HospitalService";
 import BaseController from "./BaseController";
-import { AddressService } from "../services/AddressService";
-import { Address, AddressAttributes } from "../database/models/Address";
 
 export default class HospitalController extends BaseController {
   private hospital: HospitalService<Hospital>;
@@ -48,9 +48,15 @@ export default class HospitalController extends BaseController {
   ): Promise<void> {
     try {
       const id = req.params.id;
-      const hospital: HospitalAttributes = await this.hospital.getHospitalById(
-        id
-      );
+      const hospital: HospitalAttributes =
+        await this.hospital.getOneWithAssociation(
+          { id: id, deletedAt: null },
+          ["Address"],
+          ["createdAt", "updatedAt", "deletedAt", "AddressId", "password"]
+        );
+      if (!hospital) {
+        throw new ApiError("Hospital not found!", StatusCodes.NOT_FOUND);
+      }
       res.locals.data = hospital;
       this.send(res);
     } catch (err) {
@@ -135,29 +141,4 @@ export default class HospitalController extends BaseController {
       next(err);
     }
   }
-
-  // /**
-  //  *
-  //  * @param req
-  //  * @param res
-  //  * @param next
-  //  */
-  // public async updateEnquiry(
-  //   req: Request,
-  //   res: Response,
-  //   next: NextFunction
-  // ): Promise<void> {
-  //   try {
-  //     const id = req.params.id;
-  //     const { body } = req;
-  //     const enquiry: EnquiryAttributes = await this.hospital.update(id, body);
-  //     res.locals.data = {
-  //       enquiry,
-  //     };
-  //     // call base class method
-  //     this.send(res);
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // }
 }

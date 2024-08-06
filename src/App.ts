@@ -12,6 +12,7 @@ import hospitalRoutes from "./routes/HospitalRoutes";
 import userRoutes from "./routes/UserRoutes";
 import authRoutes from "./routes/AuthRoutes";
 import fileRoutes from "./routes/FileRoutes";
+import path from "path";
 
 export default class App {
   public express: express.Application;
@@ -25,6 +26,11 @@ export default class App {
 
     // add all global middleware like cors
     this.middleware();
+    //
+    this.express.use(
+      "/api/file",
+      express.static(path.join(__dirname, "uploads"))
+    );
 
     // // register the all routes
     this.routes();
@@ -74,6 +80,7 @@ export default class App {
     this.express.use(cookieParser());
     const corsOptions = {
       origin: ["http://localhost:3000", "http://127.0.0.1:3001"],
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
       credentials: true,
     };
     this.express.use(cors(corsOptions));
