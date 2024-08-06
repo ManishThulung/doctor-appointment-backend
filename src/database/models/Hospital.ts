@@ -1,11 +1,13 @@
 import { DataTypes, Model, UUIDV4 } from "sequelize";
 import sequelize from "../index";
+import { HospitalType } from "../../types/enums.types";
 
 interface HospitalAttributes {
   id: string;
   name: string;
-  address: string;
-  country: string;
+  type: HospitalType;
+  // address: string;
+  // country: string;
   deletedAt: Date | null;
 }
 
@@ -18,8 +20,7 @@ class Hospital
 {
   public id!: string;
   public name!: string;
-  public country!: string;
-  public address!: string;
+  public type!: HospitalType;
   public deletedAt!: Date;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -36,12 +37,8 @@ Hospital.init(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    country: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    address: {
-      type: DataTypes.STRING(200),
+    type: {
+      type: DataTypes.ENUM(HospitalType.Clinic, HospitalType.Hospital),
       allowNull: false,
     },
     deletedAt: {

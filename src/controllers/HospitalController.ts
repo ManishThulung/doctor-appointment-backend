@@ -23,7 +23,8 @@ export default class HospitalController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const hospitals: HospitalAttributes[] = await this.hospital.getHospitals();
+      const hospitals: HospitalAttributes[] =
+        await this.hospital.getHospitals();
       res.locals.data = hospitals;
       this.send(res);
     } catch (err) {
@@ -54,15 +55,23 @@ export default class HospitalController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { name, country, address } = req.body;
-      if (!name && !country) {
-        throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+      // const { name, country, address } = req.body;
+      // if (!name && !country) {
+      //   throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+      // }
+      // const hospital: HospitalAttributes = await this.hospital.createHospital({
+      //   name,
+      // });
+      if (!req.files || req.files.length === 0) {
+        throw new ApiError(
+          "Upload fail",
+          StatusCodes.BAD_REQUEST,
+          false,
+          "UploadError"
+        );
       }
-      const hospital: HospitalAttributes = await this.hospital.createHospital({
-        name,
-        country,
-        address,
-      });
+      console.log(req.body, "body");
+      console.log(req.files, "files");
       res.locals.data = {
         success: true,
         message: "Create successfully",

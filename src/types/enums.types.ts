@@ -5,3 +5,8 @@ export enum Role {
   User = "User",
   Patient = "Patient",
 }
+
+export enum HospitalType {
+  Hospital = "Hospital",
+  Clinic = "Clinic",
+}

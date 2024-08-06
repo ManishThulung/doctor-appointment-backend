@@ -11,6 +11,7 @@ import sequelizeConnection from "./database";
 import hospitalRoutes from "./routes/HospitalRoutes";
 import userRoutes from "./routes/UserRoutes";
 import authRoutes from "./routes/AuthRoutes";
+import fileRoutes from "./routes/FileRoutes";
 
 export default class App {
   public express: express.Application;
@@ -48,10 +49,12 @@ export default class App {
    * here register your all routes
    */
   private routes(): void {
-    this.express.get("/api", this.basePathRoute);
+    this.express.get("/", this.basePathRoute);
+    this.express.use("/api", fileRoutes);
     this.express.use("/api/hospital", hospitalRoutes);
     this.express.use("/api/user", userRoutes);
     this.express.use("/api/auth", authRoutes);
+    // this.express.use("/api/hospital", authRoutes);
   }
 
   /**
