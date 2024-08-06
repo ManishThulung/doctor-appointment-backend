@@ -38,8 +38,12 @@ export default class App {
       this.setupSwaggerDocs();
     }
 
-    // Sync the Sequelize models with the database
-    await sequelizeConnection.sync({ force: false });
+    try {
+      // Sync the Sequelize models with the database
+      await sequelizeConnection.sync({ force: false });
+    } catch (error) {
+      console.log(error, "db error");
+    }
 
     // Authenticate the database connection
     await sequelizeConnection.authenticate();

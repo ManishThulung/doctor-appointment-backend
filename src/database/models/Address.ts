@@ -1,5 +1,6 @@
 import { DataTypes, Model, UUIDV4 } from "sequelize";
 import sequelize from "../index";
+import { Hospital } from "./Hospital";
 
 interface AddressAttributes {
   id: string;
@@ -9,7 +10,6 @@ interface AddressAttributes {
   municipality: string;
   wardNo: number;
   wardName: string;
-  toleNo: number | null;
   deletedAt: Date | null;
 }
 
@@ -27,7 +27,6 @@ class Address
   public municipality!: string;
   public wardName!: string;
   public wardNo!: number;
-  public toleNo!: number;
   public deletedAt!: Date;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -62,12 +61,8 @@ Address.init(
       allowNull: false,
     },
     wardNo: {
-      type: DataTypes.NUMBER,
+      type: DataTypes.STRING,
       allowNull: false,
-    },
-    toleNo: {
-      type: DataTypes.NUMBER,
-      allowNull: true,
     },
     deletedAt: {
       type: DataTypes.DATE(),
@@ -81,5 +76,7 @@ Address.init(
     timestamps: true,
   }
 );
+
+
 
 export { Address, AddressAttributes, AddressCreationAttributes };

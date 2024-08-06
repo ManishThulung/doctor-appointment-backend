@@ -40,6 +40,7 @@ export class HospitalService<T> extends Repository<T> {
       const hospital = await this.create<HospitalCreationAttributes>(payload);
       return hospital;
     } catch (error) {
+      console.log(error, "error hos post");
       logger.error(error);
       throw error;
     }

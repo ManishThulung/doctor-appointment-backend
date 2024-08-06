@@ -5,14 +5,21 @@ import { Hospital, HospitalAttributes } from "../database/models/Hospital";
 import logger from "../lib/logger";
 import { HospitalService } from "../services/HospitalService";
 import BaseController from "./BaseController";
+import { AddressService } from "../services/AddressService";
+import { Address, AddressAttributes } from "../database/models/Address";
 
 export default class HospitalController extends BaseController {
   private hospital: HospitalService<Hospital>;
+  private address: AddressService<Address>;
 
   constructor() {
     super();
     this.hospital = new HospitalService({
       repository: Hospital,
+      logger,
+    });
+    this.address = new AddressService({
+      repository: Address,
       logger,
     });
   }
@@ -24,7 +31,9 @@ export default class HospitalController extends BaseController {
   ): Promise<void> {
     try {
       const hospitals: HospitalAttributes[] =
-        await this.hospital.getHospitals();
+        await this.hospital.getAllWithAssociation({ deletedAt: null }, [
+          "Address",
+        ]);
       res.locals.data = hospitals;
       this.send(res);
     } catch (err) {
@@ -55,13 +64,21 @@ export default class HospitalController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      // const { name, country, address } = req.body;
-      // if (!name && !country) {
-      //   throw new ApiError(ReasonPhrases.BAD_REQUEST, StatusCodes.BAD_REQUEST);
-      // }
-      // const hospital: HospitalAttributes = await this.hospital.createHospital({
-      //   name,
-      // });
+      const {
+        name,
+        type,
+        specialization,
+        email,
+        password,
+        country,
+        province,
+        district,
+        municipality,
+        wardName,
+        wardNo,
+        toleNo,
+      } = req.body;
+
       if (!req.files || req.files.length === 0) {
         throw new ApiError(
           "Upload fail",
@@ -70,8 +87,45 @@ export default class HospitalController extends BaseController {
           "UploadError"
         );
       }
-      console.log(req.body, "body");
-      console.log(req.files, "files");
+
+      const addressPayload = {
+        country,
+        province,
+        district,
+        municipality,
+        wardName,
+        wardNo,
+        toleNo,
+      };
+
+      const address: AddressAttributes = await this.address.createAddress(
+        addressPayload
+      );
+      if (!address) {
+        throw new ApiError("Unable to create address", 500);
+      }
+
+      const parsedSpecialization =
+        typeof specialization === "string"
+          ? JSON.parse(specialization)
+          : specialization;
+
+      const payload = {
+        name,
+        email,
+        password,
+        type,
+        specialization: parsedSpecialization,
+        logo: req.files?.["logo"][0],
+        gallery: req.files?.["gallery"],
+        AddressId: address.id,
+      };
+      const hospital: HospitalAttributes = await this.hospital.createHospital(
+        payload
+      );
+      if (!hospital) {
+        throw new ApiError("Something went wrong", 500, false, "ServerError");
+      }
       res.locals.data = {
         success: true,
         message: "Create successfully",
