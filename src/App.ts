@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import http from "http";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger.json";
@@ -63,8 +64,10 @@ export default class App {
     this.express.use(helmet({ contentSecurityPolicy: false }));
     this.express.use(express.json({ limit: "100mb" }));
     this.express.use(express.urlencoded({ limit: "100mb", extended: true }));
+    this.express.use(cookieParser());
     const corsOptions = {
-      origin: ["http://localhost:3000/", "http://127.0.0.1:3001"],
+      origin: ["http://localhost:3000", "http://127.0.0.1:3001"],
+      credentials: true,
     };
     this.express.use(cors(corsOptions));
   }

@@ -81,7 +81,10 @@ export default class AuthController extends BaseController {
       const accessToken = await this.jwt.generateToken(payload);
       res.locals.data = {
         accessToken,
+        user: { ...payload },
+        message: "Login successful",
       };
+      res.cookie("token", accessToken, { maxAge: 900000, httpOnly: true });
       super.send(res, StatusCodes.OK);
     } catch (err) {
       next(err);
