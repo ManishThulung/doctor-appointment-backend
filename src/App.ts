@@ -5,6 +5,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
+import path from "path";
 import swaggerDocument from "../swagger.json";
 import addErrorHandler, { notFoundRoutes } from "./middleware/error-handler";
 import sequelizeConnection from "./database";
@@ -12,7 +13,7 @@ import hospitalRoutes from "./routes/HospitalRoutes";
 import userRoutes from "./routes/UserRoutes";
 import authRoutes from "./routes/AuthRoutes";
 import fileRoutes from "./routes/FileRoutes";
-import path from "path";
+import doctorRoutes from "./routes/DoctorRoutes";
 
 export default class App {
   public express: express.Application;
@@ -64,7 +65,7 @@ export default class App {
     this.express.use("/api/hospital", hospitalRoutes);
     this.express.use("/api/user", userRoutes);
     this.express.use("/api/auth", authRoutes);
-    // this.express.use("/api/hospital", authRoutes);
+    this.express.use("/api/doctor", doctorRoutes);
   }
 
   /**

@@ -2,68 +2,67 @@ import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../abstractions/ApiError";
 import { Address, AddressAttributes } from "../database/models/Address";
-import { Hospital, HospitalAttributes } from "../database/models/Hospital";
-import logger from "../lib/logger";
+import {
+  Doctor,
+  DoctorAttributes,
+  DoctorCreationAttributes,
+} from "../database/models/Doctor";
 import { AddressService } from "../services/AddressService";
-import { HospitalService } from "../services/HospitalService";
+import { DoctorService } from "../services/DoctorService";
 import BaseController from "./BaseController";
 
-export default class HospitalController extends BaseController {
-  private hospital: HospitalService<Hospital>;
+export default class DoctorController extends BaseController {
+  private doctor: DoctorService<Doctor>;
   private address: AddressService<Address>;
 
   constructor() {
     super();
-    this.hospital = new HospitalService({
-      repository: Hospital,
-      logger,
-    });
+    this.doctor = new DoctorService({ repository: Doctor });
     this.address = new AddressService({
       repository: Address,
     });
   }
 
-  public async getHospitals(
+  public async getDoctors(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const hospitals: HospitalAttributes[] =
-        await this.hospital.getAllWithAssociation({ deletedAt: null }, [
+      const doctors: DoctorAttributes[] =
+        await this.doctor.getAllWithAssociation({ deletedAt: null }, [
           "Address",
         ]);
-      res.locals.data = hospitals;
+      res.locals.data = doctors;
       this.send(res);
     } catch (err) {
       next(err);
     }
   }
 
-  public async getHospitalById(
+  public async getDoctorById(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const id = req.params.id;
-      const hospital: HospitalAttributes =
-        await this.hospital.getOneWithAssociation(
-          { id: id, deletedAt: null },
-          ["Address"],
-          ["createdAt", "updatedAt", "deletedAt", "AddressId", "password"]
-        );
-      if (!hospital) {
-        throw new ApiError("Hospital not found!", StatusCodes.NOT_FOUND);
+      const doctor: DoctorAttributes = await this.doctor.getOneWithAssociation(
+        { id: id, deletedAt: null },
+        ["Address"],
+        ["createdAt", "updatedAt", "deletedAt", "AddressId", "password"]
+      );
+      if (!doctor) {
+        throw new ApiError("Doctor not found!", StatusCodes.NOT_FOUND);
       }
-      res.locals.data = hospital;
+      res.locals.data = doctor;
       this.send(res);
     } catch (err) {
       next(err);
     }
   }
 
-  public async createHospital(
+  public async createDoctor(
     req: Request,
     res: Response,
     next: NextFunction
@@ -71,10 +70,10 @@ export default class HospitalController extends BaseController {
     try {
       const {
         name,
-        type,
-        specialization,
         email,
         password,
+        specialization,
+        dob,
         country,
         province,
         district,
@@ -93,6 +92,11 @@ export default class HospitalController extends BaseController {
         );
       }
 
+      const parsedSpecialization =
+        typeof specialization === "string"
+          ? JSON.parse(specialization)
+          : specialization;
+
       const addressPayload = {
         country,
         province,
@@ -110,25 +114,19 @@ export default class HospitalController extends BaseController {
         throw new ApiError("Unable to create address", 500);
       }
 
-      const parsedSpecialization =
-        typeof specialization === "string"
-          ? JSON.parse(specialization)
-          : specialization;
-
-      const payload = {
+      const payload: DoctorCreationAttributes = {
         name,
         email,
         password,
-        type,
         specialization: parsedSpecialization,
-        logo: req.files?.["logo"][0],
-        gallery: req.files?.["gallery"],
+        dob,
+        avatar: req.files?.["avatar"][0],
+        certificates: req.files?.["certificates"],
         AddressId: address.id,
       };
-      const hospital: HospitalAttributes = await this.hospital.createHospital(
-        payload
-      );
-      if (!hospital) {
+      const doctor: DoctorAttributes =
+        await this.doctor.create<DoctorCreationAttributes>(payload);
+      if (!doctor) {
         throw new ApiError("Something went wrong", 500, false, "ServerError");
       }
       res.locals.data = {

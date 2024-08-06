@@ -1,10 +1,9 @@
-import ApiError from "../abstractions/ApiError";
 import { AddressCreationAttributes } from "../database/models/Address";
 import logger from "../lib/logger";
 import { Repository } from "../repository/Repository";
 
 export class AddressService<T> extends Repository<T> {
-  constructor({ repository, logger }) {
+  constructor({ repository }) {
     super(repository);
   }
 
