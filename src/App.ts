@@ -2,12 +2,19 @@ import cors from "cors";
 import express from "express";
 import http from "http";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
+import path from "path";
 import swaggerDocument from "../swagger.json";
 import addErrorHandler, { notFoundRoutes } from "./middleware/error-handler";
 import sequelizeConnection from "./database";
 import hospitalRoutes from "./routes/HospitalRoutes";
+import userRoutes from "./routes/UserRoutes";
+import authRoutes from "./routes/AuthRoutes";
+import fileRoutes from "./routes/FileRoutes";
+import doctorRoutes from "./routes/DoctorRoutes";
+import reviewRoutes from "./routes/ReviewRoutes";
 
 export default class App {
   public express: express.Application;
@@ -21,6 +28,11 @@ export default class App {
 
     // add all global middleware like cors
     this.middleware();
+    //
+    this.express.use(
+      "/api/file",
+      express.static(path.join(__dirname, "uploads"))
+    );
 
     // // register the all routes
     this.routes();
@@ -34,8 +46,12 @@ export default class App {
       this.setupSwaggerDocs();
     }
 
-    // Sync the Sequelize models with the database
-    await sequelizeConnection.sync({ force: false });
+    try {
+      // Sync the Sequelize models with the database
+      await sequelizeConnection.sync({ force: false });
+    } catch (error) {
+      console.log(error, "db error");
+    }
 
     // Authenticate the database connection
     await sequelizeConnection.authenticate();
@@ -46,7 +62,12 @@ export default class App {
    */
   private routes(): void {
     this.express.get("/", this.basePathRoute);
+    this.express.use("/api", fileRoutes);
     this.express.use("/api/hospital", hospitalRoutes);
+    this.express.use("/api/user", userRoutes);
+    this.express.use("/api/auth", authRoutes);
+    this.express.use("/api/doctor", doctorRoutes);
+    this.express.use("/api/review", reviewRoutes);
   }
 
   /**
@@ -59,8 +80,11 @@ export default class App {
     this.express.use(helmet({ contentSecurityPolicy: false }));
     this.express.use(express.json({ limit: "100mb" }));
     this.express.use(express.urlencoded({ limit: "100mb", extended: true }));
+    this.express.use(cookieParser());
     const corsOptions = {
-      origin: ["http://localhost:3000/", "http://127.0.0.1:3001"],
+      origin: ["http://localhost:3000", "http://127.0.0.1:3001"],
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      credentials: true,
     };
     this.express.use(cors(corsOptions));
   }

@@ -1,16 +1,15 @@
 import { DataTypes, Model, UUIDV4 } from "sequelize";
 import sequelize from "../index";
-import { HospitalType } from "../../types/enums.types";
 import { Address } from "./Address";
 
-interface HospitalAttributes {
+interface DoctorAttributes {
   id: string;
   name: string;
   email: string;
   password: string;
-  type: HospitalType;
-  logo: any;
-  gallery: any;
+  dob: Date;
+  avatar: any;
+  certificates: any;
   specialization: string[];
   isVerified: boolean;
   isEmailVerified: boolean;
@@ -19,24 +18,24 @@ interface HospitalAttributes {
   AddressId?: string;
 }
 
-interface HospitalCreationAttributes
+interface DoctorCreationAttributes
   extends Omit<
-    HospitalAttributes,
+    DoctorAttributes,
     "id" | "deletedAt" | "joinedAt" | "isVerified" | "isEmailVerified"
   > {}
 
-class Hospital
-  extends Model<HospitalAttributes, HospitalCreationAttributes>
-  implements HospitalAttributes
+class Doctor
+  extends Model<DoctorAttributes, DoctorCreationAttributes>
+  implements DoctorAttributes
 {
   public id!: string;
   public name!: string;
   public email!: string;
   public password!: string;
-  public type!: HospitalType;
+  public dob!: Date;
+  public avatar!: any;
+  public certificates!: any;
   public specialization!: string[];
-  public logo!: any;
-  public gallery!: any;
   public isVerified!: boolean;
   public isEmailVerified!: boolean;
   public deletedAt!: Date;
@@ -45,7 +44,7 @@ class Hospital
   public readonly updatedAt!: Date;
 }
 
-Hospital.init(
+Doctor.init(
   {
     id: {
       type: DataTypes.UUID,
@@ -64,11 +63,15 @@ Hospital.init(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    type: {
-      type: DataTypes.ENUM(HospitalType.Clinic, HospitalType.Hospital),
+    specialization: {
+      type: DataTypes.JSON(),
       allowNull: false,
     },
-    specialization: {
+    dob: {
+      type: DataTypes.DATEONLY(),
+      allowNull: false,
+    },
+    avatar: {
       type: DataTypes.JSON(),
       allowNull: false,
     },
@@ -90,24 +93,21 @@ Hospital.init(
       type: DataTypes.DATE(),
       allowNull: true,
     },
-    logo: {
-      type: DataTypes.JSONB(),
-      allowNull: false,
-    },
-    gallery: {
+    certificates: {
       type: DataTypes.JSON(),
       allowNull: false,
     },
   },
+
   {
     sequelize,
-    modelName: "Hospital",
-    tableName: "Hospital",
+    modelName: "Doctor",
+    tableName: "Doctor",
     timestamps: true,
   }
 );
 
-Address.hasOne(Hospital);
-Hospital.belongsTo(Address);
+Address.hasOne(Doctor);
+Doctor.belongsTo(Address);
 
-export { Hospital, HospitalAttributes, HospitalCreationAttributes };
+export { Doctor, DoctorAttributes, DoctorCreationAttributes };

@@ -1,20 +1,22 @@
 import ApiError from "../abstractions/ApiError";
 import { HospitalCreationAttributes } from "../database/models/Hospital";
-import logger from "../lib/logger";
+import { Logger } from "../lib/logger";
 import { Repository } from "../repository/Repository";
 
 export class HospitalService<T> extends Repository<T> {
   private hospitalService: T;
+  private logger: Logger;
   constructor({ repository, logger }) {
     super(repository);
     this.hospitalService = repository;
+    this.logger = logger;
   }
   async getHospitals(): Promise<T[]> {
     try {
       const hospitals = await this.getAll({ deletedAt: null });
       return hospitals;
     } catch (error) {
-      logger.error(error);
+      this.logger.error(error);
       throw error;
     }
   }
@@ -30,7 +32,7 @@ export class HospitalService<T> extends Repository<T> {
       }
       return hospital;
     } catch (error) {
-      logger.error(error);
+      this.logger.error(error);
       throw error;
     }
   }
@@ -40,7 +42,7 @@ export class HospitalService<T> extends Repository<T> {
       const hospital = await this.create<HospitalCreationAttributes>(payload);
       return hospital;
     } catch (error) {
-      logger.error(error);
+      this.logger.error(error);
       throw error;
     }
   }
