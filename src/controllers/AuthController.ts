@@ -117,7 +117,7 @@ export default class AuthController extends BaseController {
       await this.authUser.registerUser(payload);
       res.locals.data = {
         success: true,
-        message: "Email has been sent. Verify it",
+        message: "Email has been sent. Verify it first",
       };
       super.send(res, StatusCodes.CREATED);
     } catch (err) {
