@@ -80,6 +80,7 @@ export default class AuthController extends BaseController {
       };
       const accessToken = await this.jwt.generateToken(payload);
       res.locals.data = {
+        success: true,
         accessToken,
         user: { ...payload },
         message: "Login successful",

@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { upload } from "../utils/upload";
 import DepartmentController from "../controllers/DepartmentController";
+import { authenticate, authorize } from "../middleware/auth-middleware";
+import { Role } from "../types/enums.types";
 
 const router = Router();
 
@@ -15,6 +17,8 @@ router.get("/", (req: Request, res: Response, next: NextFunction) => {
 
 router.post(
   "/",
+  authenticate,
+  authorize([Role.SuperAdmin]),
   uploadDocuments,
   (req: Request, res: Response, next: NextFunction) => {
     new DepartmentController().createDepartment(req, res, next);
