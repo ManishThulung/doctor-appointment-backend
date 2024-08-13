@@ -1,21 +1,26 @@
 import { DataTypes, Model, UUIDV4 } from "sequelize";
 import sequelize from "../index";
 import { Address } from "./Address";
+import { Department } from "./Department";
+import { Hospital } from "./Hospital";
 
 interface DoctorAttributes {
   id: string;
   name: string;
   email: string;
   password: string;
+  phone: string;
   dob: Date;
+  gender: string;
+  address: string;
   avatar: any;
-  certificates: any;
-  specialization: string[];
+  certificate: any;
   isVerified: boolean;
   isEmailVerified: boolean;
   deletedAt: Date | null;
   joinedAt: Date | null;
-  AddressId?: string;
+  DepartmentId?: string;
+  HospitalId?: string;
 }
 
 interface DoctorCreationAttributes
@@ -32,10 +37,12 @@ class Doctor
   public name!: string;
   public email!: string;
   public password!: string;
+  public phone!: string;
+  public gender!: string;
+  public address!: string;
   public dob!: Date;
   public avatar!: any;
-  public certificates!: any;
-  public specialization!: string[];
+  public certificate!: any;
   public isVerified!: boolean;
   public isEmailVerified!: boolean;
   public deletedAt!: Date;
@@ -63,8 +70,16 @@ Doctor.init(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    specialization: {
-      type: DataTypes.JSON(),
+    phone: {
+      type: DataTypes.STRING(),
+      allowNull: false,
+    },
+    address: {
+      type: DataTypes.STRING(),
+      allowNull: false,
+    },
+    gender: {
+      type: DataTypes.STRING(),
       allowNull: false,
     },
     dob: {
@@ -93,7 +108,7 @@ Doctor.init(
       type: DataTypes.DATE(),
       allowNull: true,
     },
-    certificates: {
+    certificate: {
       type: DataTypes.JSON(),
       allowNull: false,
     },
@@ -107,7 +122,10 @@ Doctor.init(
   }
 );
 
-Address.hasOne(Doctor);
-Doctor.belongsTo(Address);
+Department.hasOne(Doctor);
+Doctor.belongsTo(Department);
+
+Hospital.hasOne(Doctor);
+Doctor.belongsTo(Hospital);
 
 export { Doctor, DoctorAttributes, DoctorCreationAttributes };

@@ -45,4 +45,11 @@ export class Repository<T> {
     let result = await this.dbContext.create(payload);
     return result;
   }
+
+  async update<S>(whereClause: any, payload: S): Promise<T> {
+    let result = await this.dbContext.update(payload, {
+      where: whereClause,
+    });
+    return result;
+  }
 }

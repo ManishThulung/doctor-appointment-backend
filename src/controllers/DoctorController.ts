@@ -10,17 +10,14 @@ import {
 import { AddressService } from "../services/AddressService";
 import { DoctorService } from "../services/DoctorService";
 import BaseController from "./BaseController";
+import { EmailService } from "../services/EmailService";
 
 export default class DoctorController extends BaseController {
   private doctor: DoctorService<Doctor>;
-  private address: AddressService<Address>;
 
   constructor() {
     super();
     this.doctor = new DoctorService({ repository: Doctor });
-    this.address = new AddressService({
-      repository: Address,
-    });
   }
 
   public async getDoctors(
@@ -31,7 +28,7 @@ export default class DoctorController extends BaseController {
     try {
       const doctors: DoctorAttributes[] =
         await this.doctor.getAllWithAssociation({ deletedAt: null }, [
-          "Address",
+          "Department",
         ]);
       res.locals.data = doctors;
       this.send(res);
@@ -49,7 +46,7 @@ export default class DoctorController extends BaseController {
       const id = req.params.id;
       const doctor: DoctorAttributes = await this.doctor.getOneWithAssociation(
         { id: id, deletedAt: null },
-        ["Address"],
+        ["Department", "Hospital"],
         ["createdAt", "updatedAt", "deletedAt", "AddressId", "password"]
       );
       if (!doctor) {
@@ -68,22 +65,29 @@ export default class DoctorController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
+      const emailService = new EmailService({ repository: Doctor });
       const {
         name,
         email,
         password,
-        specialization,
+        phone,
+        gender,
+        address,
         dob,
-        country,
-        province,
-        district,
-        municipality,
-        wardName,
-        wardNo,
-        toleNo,
+        department,
+        hospitalId,
       } = req.body;
 
+      const isExistDoctor = await this.doctor.getOne({ email: email });
+      if (isExistDoctor) {
+        throw new ApiError(
+          "Doctor already exixt, login instead",
+          StatusCodes.CONFLICT
+        );
+      }
+
       if (!req.files || req.files.length === 0) {
+        console.log(req.files, "req.files");
         throw new ApiError(
           "Upload fail",
           StatusCodes.BAD_REQUEST,
@@ -92,46 +96,57 @@ export default class DoctorController extends BaseController {
         );
       }
 
-      const parsedSpecialization =
-        typeof specialization === "string"
-          ? JSON.parse(specialization)
-          : specialization;
-
-      const addressPayload = {
-        country,
-        province,
-        district,
-        municipality,
-        wardName,
-        wardNo,
-        toleNo,
-      };
-
-      const address: AddressAttributes = await this.address.createAddress(
-        addressPayload
-      );
-      if (!address) {
-        throw new ApiError("Unable to create address", 500);
-      }
-
       const payload: DoctorCreationAttributes = {
         name,
         email,
         password,
-        specialization: parsedSpecialization,
         dob,
+        phone,
+        address,
+        gender,
         avatar: req.files?.["avatar"][0],
-        certificates: req.files?.["certificates"],
-        AddressId: address.id,
+        certificate: req.files?.["certificate"][0],
+        DepartmentId: department,
+        HospitalId: hospitalId,
       };
       const doctor: DoctorAttributes =
         await this.doctor.create<DoctorCreationAttributes>(payload);
       if (!doctor) {
         throw new ApiError("Something went wrong", 500, false, "ServerError");
       }
+      await emailService.emailSender(
+        email,
+        "Verify your email",
+        `click here to verify your email http://localhost:8000/api/doctor/email/verify?id=${doctor?.id}&email=${doctor.email}`
+      );
       res.locals.data = {
         success: true,
-        message: "Create successfully",
+        message: "Email has been sent to you, verify it first",
+      };
+      super.send(res, StatusCodes.CREATED);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async verifyEmail(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const emailService = new EmailService({ repository: Doctor });
+      const { id, email } = req.query;
+      let verifyEmail: any;
+      if (typeof id === "string" && typeof email === "string") {
+        verifyEmail = await emailService.verifyEmail(id, email);
+      }
+      if (!verifyEmail) {
+        throw new ApiError("Something went wrong, please try again", 500);
+      }
+      res.locals.data = {
+        success: true,
+        message: "Email verification successful, Please proceed to login",
       };
       super.send(res, StatusCodes.CREATED);
     } catch (err) {
