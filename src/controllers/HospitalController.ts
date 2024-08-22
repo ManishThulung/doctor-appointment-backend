@@ -69,7 +69,7 @@ export default class HospitalController extends BaseController {
       const hospital: HospitalAttributes =
         await this.hospital.getOneWithAssociation(
           { id: id, deletedAt: null },
-          ["Address"],
+          ["Address", "Doctor"],
           ["createdAt", "updatedAt", "deletedAt", "AddressId", "password"]
         );
       if (!hospital) {

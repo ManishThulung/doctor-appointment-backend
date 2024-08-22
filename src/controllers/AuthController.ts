@@ -7,6 +7,7 @@ import { AuthService } from "../services/AuthService";
 import BaseController from "./BaseController";
 import { EncryptDecrypt } from "../utils/EncryptDecrypt";
 import { JwtToken } from "../utils/JwtToken";
+import { EmailService } from "../services/EmailService";
 
 export default class AuthController extends BaseController {
   private authUser: AuthService<User>;
@@ -102,6 +103,8 @@ export default class AuthController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
+      const emailService = new EmailService({ repository: User });
+
       const { email, password, name } = req.body;
       const existUser = await this.authUser.getOne({ email, deletedAt: null });
       if (existUser) {
@@ -119,10 +122,64 @@ export default class AuthController extends BaseController {
         password: hashedPassword,
       };
 
-      await this.authUser.registerUser(payload);
+      const user = await this.authUser.registerUser(payload);
+      await emailService.emailSender(
+        email,
+        "Verify your email",
+        `click here to verify your email http://localhost:8000/api/auth/email/verify?id=${user?.id}&email=${email}`
+      );
       res.locals.data = {
         success: true,
         message: "Email has been sent. Verify it first",
+      };
+      super.send(res, StatusCodes.CREATED);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async verifyEmail(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const emailService = new EmailService({ repository: User });
+      const { id, email } = req.query;
+      let verifyEmail: any;
+      if (typeof id === "string" && typeof email === "string") {
+        verifyEmail = await emailService.verifyEmail(id, email);
+      }
+      if (!verifyEmail) {
+        throw new ApiError("Something went wrong, please try again", 500);
+      }
+      res.locals.data = {
+        success: true,
+        message: "Email verification successful, Please proceed to login",
+      };
+      super.send(res, StatusCodes.CREATED);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async getProfile(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id, email } = req.user?.payload;
+      const me = await this.authUser.getOne({ id, email });
+      if (!me) {
+        throw new ApiError(
+          "Something went wrong!",
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+      res.locals.data = {
+        success: true,
+        data: me,
       };
       super.send(res, StatusCodes.CREATED);
     } catch (err) {

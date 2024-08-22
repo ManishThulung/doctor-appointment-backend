@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
 import DoctorController from "../controllers/DoctorController";
 import { upload } from "../utils/upload";
+import { authenticate } from "../middleware/auth-middleware";
 
 const router = Router();
 
@@ -35,6 +36,14 @@ router.post(
   uploadDocuments,
   (req: Request, res: Response, next: NextFunction) => {
     new DoctorController().createDoctor(req, res, next);
+  }
+);
+
+router.post(
+  "/appointment",
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().createAppointment(req, res, next);
   }
 );
 
