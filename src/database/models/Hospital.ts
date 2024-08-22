@@ -11,7 +11,9 @@ interface HospitalAttributes {
   type: HospitalType;
   logo: any;
   gallery: any;
-  specialization: string[];
+  phone: string;
+  certificate: any;
+  pan: string;
   isVerified: boolean;
   isEmailVerified: boolean;
   deletedAt: Date | null;
@@ -33,10 +35,12 @@ class Hospital
   public name!: string;
   public email!: string;
   public password!: string;
+  public phone!: string;
   public type!: HospitalType;
-  public specialization!: string[];
   public logo!: any;
   public gallery!: any;
+  public certificate!: any;
+  public pan!: string;
   public isVerified!: boolean;
   public isEmailVerified!: boolean;
   public deletedAt!: Date;
@@ -68,8 +72,12 @@ Hospital.init(
       type: DataTypes.ENUM(HospitalType.Clinic, HospitalType.Hospital),
       allowNull: false,
     },
-    specialization: {
-      type: DataTypes.JSON(),
+    phone: {
+      type: DataTypes.STRING(15),
+      allowNull: false,
+    },
+    pan: {
+      type: DataTypes.STRING(20),
       allowNull: false,
     },
     isVerified: {
@@ -95,6 +103,10 @@ Hospital.init(
       allowNull: false,
     },
     gallery: {
+      type: DataTypes.JSON(),
+      allowNull: false,
+    },
+    certificate: {
       type: DataTypes.JSON(),
       allowNull: false,
     },

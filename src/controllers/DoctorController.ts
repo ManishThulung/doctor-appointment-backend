@@ -36,6 +36,24 @@ export default class DoctorController extends BaseController {
       next(err);
     }
   }
+  public async getDoctorsByHospitalId(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const doctors: DoctorAttributes[] =
+        await this.doctor.getAllWithAssociation(
+          { HospitalId: id, deletedAt: null, isEmailVerified: true },
+          ["Department"]
+        );
+      res.locals.data = doctors;
+      this.send(res);
+    } catch (err) {
+      next(err);
+    }
+  }
 
   public async getDoctorById(
     req: Request,

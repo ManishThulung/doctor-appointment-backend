@@ -1,13 +1,13 @@
 import nodemailer from "nodemailer";
-import { Repository } from "../repository/Repository";
 import ApiError from "../abstractions/ApiError";
+import { Repository } from "../repository/Repository";
 
 export class EmailService<T> extends Repository<T> {
   constructor({ repository }) {
     super(repository);
   }
   async verifyEmail(id: string, email: string): Promise<any> {
-    const isEmailExist = this.getOne({ email, id });
+    const isEmailExist = await this.getOne({ id, email });
     if (!isEmailExist) {
       throw new ApiError("Email does not exist", 404);
     }

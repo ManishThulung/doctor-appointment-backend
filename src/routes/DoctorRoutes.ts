@@ -17,6 +17,13 @@ router.get("/:id", (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.get(
+  "/hospital/:id",
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().getDoctorsByHospitalId(req, res, next);
+  }
+);
+
+router.get(
   "/email/verify",
   (req: Request, res: Response, next: NextFunction) => {
     new DoctorController().verifyEmail(req, res, next);

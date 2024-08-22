@@ -26,6 +26,7 @@ export class Repository<T> {
   async getOne(whereClause: any): Promise<T> {
     let result = await this.dbContext.findOne({
       where: whereClause,
+      attributes: { exclude: ["createdAt", "updatedAt", "deletedAt"] },
     });
     return result;
   }
