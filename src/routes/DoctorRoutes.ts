@@ -6,7 +6,7 @@ const router = Router();
 
 const uploadDocuments = upload.fields([
   { name: "avatar", maxCount: 1 },
-  { name: "certificates", maxCount: 9 },
+  { name: "certificate", maxCount: 9 },
 ]);
 
 router.get("/", (req: Request, res: Response, next: NextFunction) => {
@@ -15,6 +15,20 @@ router.get("/", (req: Request, res: Response, next: NextFunction) => {
 router.get("/:id", (req: Request, res: Response, next: NextFunction) => {
   new DoctorController().getDoctorById(req, res, next);
 });
+
+router.get(
+  "/hospital/:id",
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().getDoctorsByHospitalId(req, res, next);
+  }
+);
+
+router.get(
+  "/email/verify",
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().verifyEmail(req, res, next);
+  }
+);
 
 router.post(
   "/",

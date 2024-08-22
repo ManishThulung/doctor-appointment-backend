@@ -80,11 +80,16 @@ export default class AuthController extends BaseController {
       };
       const accessToken = await this.jwt.generateToken(payload);
       res.locals.data = {
+        success: true,
         accessToken,
         user: { ...payload },
         message: "Login successful",
       };
-      res.cookie("token", accessToken, { maxAge: 900000, httpOnly: true });
+      res.cookie("token", accessToken, {
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        httpOnly: true,
+        expires: new Date(Date.now() + 86400 * 1000), // 1 day
+      });
       super.send(res, StatusCodes.OK);
     } catch (err) {
       next(err);
@@ -117,7 +122,7 @@ export default class AuthController extends BaseController {
       await this.authUser.registerUser(payload);
       res.locals.data = {
         success: true,
-        message: "Email has been sent. Verify it",
+        message: "Email has been sent. Verify it first",
       };
       super.send(res, StatusCodes.CREATED);
     } catch (err) {

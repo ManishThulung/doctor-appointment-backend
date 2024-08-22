@@ -26,6 +26,7 @@ export class Repository<T> {
   async getOne(whereClause: any): Promise<T> {
     let result = await this.dbContext.findOne({
       where: whereClause,
+      attributes: { exclude: ["createdAt", "updatedAt", "deletedAt"] },
     });
     return result;
   }
@@ -43,6 +44,13 @@ export class Repository<T> {
   }
   async create<S>(payload: S): Promise<T> {
     let result = await this.dbContext.create(payload);
+    return result;
+  }
+
+  async update<S>(whereClause: any, payload: S): Promise<T> {
+    let result = await this.dbContext.update(payload, {
+      where: whereClause,
+    });
     return result;
   }
 }

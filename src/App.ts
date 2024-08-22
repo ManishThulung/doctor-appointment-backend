@@ -15,6 +15,7 @@ import authRoutes from "./routes/AuthRoutes";
 import fileRoutes from "./routes/FileRoutes";
 import doctorRoutes from "./routes/DoctorRoutes";
 import reviewRoutes from "./routes/ReviewRoutes";
+import departmentRoutes from "./routes/DepartmentRoutes";
 
 export default class App {
   public express: express.Application;
@@ -68,6 +69,7 @@ export default class App {
     this.express.use("/api/auth", authRoutes);
     this.express.use("/api/doctor", doctorRoutes);
     this.express.use("/api/review", reviewRoutes);
+    this.express.use("/api/department", departmentRoutes);
   }
 
   /**
