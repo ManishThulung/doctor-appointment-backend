@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "compute-cosine-similarity": "^1.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -8,10 +9,13 @@
     "helmet": "^7.1.0",
     "http-status-codes": "^2.3.0",
     "jsonwebtoken": "^9.0.2",
+    "ml-matrix": "^6.11.1",
     "multer": "^1.4.5-lts.1",
+    "natural": "^8.0.1",
     "nodemailer": "^6.9.14",
     "pg": "^8.12.0",
     "pg-hstore": "^2.3.4",
+    "rimraf": "^6.0.1",
     "sequelize": "^6.37.3",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.13.1"
@@ -21,6 +25,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
+    "build": "rimraf dist && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
