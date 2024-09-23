@@ -274,67 +274,7 @@ export default class DoctorController extends BaseController {
   //   }
   // }
 
-  public async createAppointment(
-    req: any,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const emailService = new EmailService({ repository: Doctor });
-      const appointment = new AppointmentService({ repository: Appointment });
-
-      const { date, timeSlot, doctorId, hospitalId } = req.body;
-      const { id, email } = req.user.payload;
-
-      const isExistDoctor = await this.doctor.getOne({ id: doctorId });
-      if (!isExistDoctor) {
-        throw new ApiError("Doctor not found", StatusCodes.NOT_FOUND);
-      }
-
-      const isTimeSlotBooked: any = await appointment.getOne({
-        date,
-        timeSlot,
-      });
-
-      console.log(isTimeSlotBooked, "isTimeSlotBooked");
-
-      if (isTimeSlotBooked?.DoctorId === doctorId) {
-        throw new ApiError(
-          "This time slot is not available",
-          StatusCodes.CONFLICT
-        );
-      }
-
-      const payload: AppointmentCreationAttributes = {
-        date,
-        timeSlot,
-        DoctorId: doctorId,
-        UserId: id,
-        HospitalId: hospitalId,
-      };
-
-      const newAppointment: any =
-        await appointment.create<AppointmentCreationAttributes>(payload);
-      if (!newAppointment) {
-        throw new ApiError("Something went wrong", 500, false, "ServerError");
-      }
-
-      await emailService.emailSender(
-        isExistDoctor.email,
-        "New Appointment booking request",
-        `Click here to accept the new booking http://localhost:8000/api/doctor/appointment/verify?doctorId=${doctorId} &patientId=${id}&patientEmail=${email}`
-      );
-
-      res.locals.data = {
-        success: true,
-        message:
-          "Your appointment has been request, please check your email after 10 mins for the confirmations",
-      };
-      super.send(res, StatusCodes.CREATED);
-    } catch (err) {
-      next(err);
-    }
-  }
+  
 
   // get all the counts of docter of a hospital -> admin
   public async getDoctorsCount(

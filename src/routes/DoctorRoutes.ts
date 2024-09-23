@@ -49,14 +49,6 @@ router.post(
   }
 );
 
-router.post(
-  "/appointment",
-  authenticate,
-  (req: Request, res: Response, next: NextFunction) => {
-    new DoctorController().createAppointment(req, res, next);
-  }
-);
-
 router.get(
   "/count/doctor",
   authenticate,
