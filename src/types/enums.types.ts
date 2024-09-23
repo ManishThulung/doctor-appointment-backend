@@ -10,3 +10,9 @@ export enum HospitalType {
   Hospital = "Hospital",
   Clinic = "Clinic",
 }
+
+export enum AppointmentStatus {
+  Pending = "Pending",
+  Approved = "Approved",
+  Completed = "Completed",
+}

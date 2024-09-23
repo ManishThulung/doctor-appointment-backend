@@ -8,6 +8,8 @@ import {
 } from "../database/models/Review";
 import { ReviewService } from "../services/ReviewService";
 import BaseController from "./BaseController";
+import { Appointment } from "../database/models/Appointment";
+import { AppointmentService } from "../services/AppointmentService";
 
 export default class ReviewController extends BaseController {
   private review: ReviewService<Review>;
@@ -61,12 +63,13 @@ export default class ReviewController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const doctorId = req.params.id;
-      const review: ReviewAttributes = await this.review.getOneWithAssociation(
-        { id: doctorId, deletedAt: null },
-        ["User", "Doctor"],
-        ["createdAt", "updatedAt", "deletedAt", "UserId", "DoctorId"]
-      );
+      const id = req.params.id;
+      const review: ReviewAttributes[] =
+        await this.review.getAllWithAssociation(
+          { DoctorId: id, deletedAt: null },
+          ["User"]
+          // ["createdAt", "updatedAt", "deletedAt", "UserId", "DoctorId"]
+        );
       if (!review) {
         throw new ApiError("Review not found!", StatusCodes.NOT_FOUND);
       }
@@ -77,15 +80,36 @@ export default class ReviewController extends BaseController {
     }
   }
 
+
   public async createReview(
-    req: Request,
+    req: any,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const review: ReviewAttributes =
-        await this.review.create<ReviewCreationAttributes>(req.body);
-      if (!review) {
+      const { id } = req.user.payload;
+      const { rating, review, doctorId } = req.body;
+      const appointment = new AppointmentService({ repository: Appointment });
+      const isAllowed = await appointment.getOne({
+        UserId: id,
+        DoctorId: doctorId,
+      });
+      if (!isAllowed) {
+        throw new ApiError(
+          "You are not allowd to proved review",
+          StatusCodes.UNAUTHORIZED
+        );
+      }
+
+      const payload = {
+        rating,
+        review,
+        UserId: id,
+        DoctorId: doctorId,
+      };
+      const newReview: ReviewAttributes =
+        await this.review.create<ReviewCreationAttributes>(payload);
+      if (!newReview) {
         throw new ApiError("Something went wrong", 500, false, "ServerError");
       }
       res.locals.data = {

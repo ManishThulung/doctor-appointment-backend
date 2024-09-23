@@ -1,14 +1,16 @@
 import { NextFunction, Request, Response, Router } from "express";
 import AuthController from "../controllers/AuthController";
+import { authenticate } from "../middleware/auth-middleware";
 
 const router = Router();
 
-// router.get("/", (req: Request, res: Response, next: NextFunction) => {
-//   new AuthController().getUsers(req, res, next);
-// });
-// router.get("/:id", (req: Request, res: Response, next: NextFunction) => {
-//   new AuthController().getUserById(req, res, next);
-// });
+router.get(
+  "/me",
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => {
+    new AuthController().getProfile(req, res, next);
+  }
+);
 router.post(
   "/user/login",
   (req: Request, res: Response, next: NextFunction) => {
@@ -20,6 +22,13 @@ router.post(
   "/user/register",
   (req: Request, res: Response, next: NextFunction) => {
     new AuthController().registerUser(req, res, next);
+  }
+);
+
+router.get(
+  "/email/verify",
+  (req: Request, res: Response, next: NextFunction) => {
+    new AuthController().verifyEmail(req, res, next);
   }
 );
 

@@ -19,7 +19,7 @@ export class Repository<T> {
     let result = await this.dbContext.findAll({
       include,
       where: whereClause,
-      attributes: { exclude: ["createdAt", "updatedAt", "deletedAt"] },
+      attributes: { exclude: ["updatedAt", "deletedAt"] },
     });
     return result;
   }
@@ -52,5 +52,12 @@ export class Repository<T> {
       where: whereClause,
     });
     return result;
+  }
+
+  async count(whereClause: any): Promise<T> {
+    const count = await this.dbContext.count({
+      where: whereClause,
+    });
+    return count;
   }
 }

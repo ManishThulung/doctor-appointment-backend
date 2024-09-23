@@ -17,7 +17,12 @@ export class EmailService<T> extends Repository<T> {
     );
     return verifyEmail;
   }
-  async emailSender(email: string, title: string, body: string) {
+  async emailSender(
+    email: string,
+    title: string,
+    body: string,
+    ccEmail?: string[]
+  ) {
     try {
       // Create a Transporter to send emails
       let transporter = nodemailer.createTransport({
@@ -29,12 +34,23 @@ export class EmailService<T> extends Repository<T> {
         },
       });
       // Send emails to users
-      let info = await transporter.sendMail({
-        from: process.env.MAIL_USER,
-        to: email,
-        subject: title,
-        html: body,
-      });
+      let info: any;
+      if (ccEmail && ccEmail?.length <= 0) {
+        info = await transporter.sendMail({
+          from: process.env.MAIL_USER,
+          to: email,
+          subject: title,
+          html: body,
+        });
+      } else {
+        info = await transporter.sendMail({
+          from: process.env.MAIL_USER,
+          to: email,
+          cc: ccEmail,
+          subject: title,
+          html: body,
+        });
+      }
       return info;
     } catch (error) {
       throw new Error(error);

@@ -5,12 +5,11 @@ import { User } from "./User";
 
 interface ReviewAttributes {
   id: string;
+  deletedAt: Date | null;
   rating: string;
   review: string;
-  deletedAt: Date | null;
-  UserId?: string;
-  ReviewId?: string;
-  HospitalId?: string;
+  userId?: string;
+  doctorId?: string;
 }
 
 interface ReviewCreationAttributes
