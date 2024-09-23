@@ -89,7 +89,7 @@ export default class AuthController extends BaseController {
       res.cookie("token", accessToken, {
         maxAge: 24 * 60 * 60 * 1000, // 1 day
         httpOnly: true,
-        expires: new Date(Date.now() + 86400 * 1000), // 1 day
+        expires: new Date(Date.now() + 86400 * 100000), // 1 day
       });
       super.send(res, StatusCodes.OK);
     } catch (err) {

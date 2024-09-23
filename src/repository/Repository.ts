@@ -53,4 +53,11 @@ export class Repository<T> {
     });
     return result;
   }
+
+  async count(whereClause: any): Promise<T> {
+    const count = await this.dbContext.count({
+      where: whereClause,
+    });
+    return count;
+  }
 }

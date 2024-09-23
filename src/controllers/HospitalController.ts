@@ -8,6 +8,7 @@ import { AddressService } from "../services/AddressService";
 import { HospitalService } from "../services/HospitalService";
 import BaseController from "./BaseController";
 import { EmailService } from "../services/EmailService";
+import { Op } from "sequelize";
 
 export default class HospitalController extends BaseController {
   private hospital: HospitalService<Hospital>;
@@ -182,7 +183,7 @@ export default class HospitalController extends BaseController {
         success: true,
         message: "Email verification successful, Please proceed to login",
       };
-      super.send(res, StatusCodes.CREATED);
+      super.send(res, StatusCodes.OK);
     } catch (err) {
       next(err);
     }
@@ -219,7 +220,36 @@ export default class HospitalController extends BaseController {
         message: "Hospital verified and an email has been sent",
       };
 
-      super.send(res, StatusCodes.CREATED);
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // super admin only
+  public async getTotalNumberOfHospital(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const verifiedHospital = await this.hospital.count({
+        isVerified: true,
+        isEmailVerified: true,
+      });
+      const pendingHospital = await this.hospital.count({
+        [Op.or]: {
+          isVerified: false,
+        isEmailVerified: false,
+        },
+      },);
+
+      res.locals.data = {
+        success: true,
+        verifiedHospital,
+        pendingHospital
+      };
+      super.send(res, StatusCodes.OK);
     } catch (err) {
       next(err);
     }

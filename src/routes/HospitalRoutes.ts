@@ -51,4 +51,13 @@ router.put(
   }
 );
 
+router.get(
+  "/count/hospital",
+  authenticate,
+  authorize([Role.SuperAdmin]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new HospitalController().getTotalNumberOfHospital(req, res, next);
+  }
+);
+
 export default router;
