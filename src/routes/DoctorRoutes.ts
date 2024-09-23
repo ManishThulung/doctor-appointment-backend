@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response, Router } from "express";
 import DoctorController from "../controllers/DoctorController";
+import { authenticate, authorize } from "../middleware/auth-middleware";
 import { upload } from "../utils/upload";
-import { authenticate } from "../middleware/auth-middleware";
+import { Role } from "../types/enums.types";
 
 const router = Router();
 
@@ -16,6 +17,15 @@ router.get("/", (req: Request, res: Response, next: NextFunction) => {
 router.get("/:id", (req: Request, res: Response, next: NextFunction) => {
   new DoctorController().getDoctorById(req, res, next);
 });
+
+router.get(
+  "/hospital/admin",
+  authenticate,
+  authorize([Role.Admin]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().getDoctorsByHospitalIdAdmin(req, res, next);
+  }
+);
 
 router.get(
   "/hospital/:id",
@@ -44,6 +54,15 @@ router.post(
   authenticate,
   (req: Request, res: Response, next: NextFunction) => {
     new DoctorController().createAppointment(req, res, next);
+  }
+);
+
+router.get(
+  "/count/doctor",
+  authenticate,
+  authorize([Role.Admin]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().getDoctorsCount(req, res, next);
   }
 );
 

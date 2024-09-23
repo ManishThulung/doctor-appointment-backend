@@ -62,7 +62,7 @@ export default class AuthController extends BaseController {
       const { email, password } = req.body;
       const user = await this.authUser.getOne({ email, deletedAt: null });
       if (!user) {
-        throw new ApiError("Invalid credentials!", StatusCodes.NOT_FOUND);
+        throw new ApiError("User not found!", StatusCodes.NOT_FOUND);
       }
 
       const isPasswordCorrect = await this.hash.decryptData(

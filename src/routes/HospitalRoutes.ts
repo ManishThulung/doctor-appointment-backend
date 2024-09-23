@@ -60,4 +60,11 @@ router.get(
   }
 );
 
+router.post(
+  "/login/admin",
+  (req: Request, res: Response, next: NextFunction) => {
+    new HospitalController().hospitalAdminLogin(req, res, next);
+  }
+);
+
 export default router;

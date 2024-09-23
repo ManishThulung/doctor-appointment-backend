@@ -15,6 +15,7 @@ import { DoctorService } from "../services/DoctorService";
 import { EmailService } from "../services/EmailService";
 import { EncryptDecrypt } from "../utils/EncryptDecrypt";
 import BaseController from "./BaseController";
+import { Op } from "sequelize";
 
 export default class DoctorController extends BaseController {
   private doctor: DoctorService<Doctor>;
@@ -31,9 +32,10 @@ export default class DoctorController extends BaseController {
   ): Promise<void> {
     try {
       const doctors: DoctorAttributes[] =
-        await this.doctor.getAllWithAssociation({ deletedAt: null }, [
-          "Department",
-        ]);
+        await this.doctor.getAllWithAssociation(
+          { deletedAt: null, isVerified: true, isEmailVerified: true },
+          ["Department"]
+        );
       res.locals.data = doctors;
       this.send(res);
     } catch (err) {
@@ -49,9 +51,40 @@ export default class DoctorController extends BaseController {
       const { id } = req.params;
       const doctors: DoctorAttributes[] =
         await this.doctor.getAllWithAssociation(
-          { HospitalId: id, deletedAt: null, isEmailVerified: true },
+          {
+            HospitalId: id,
+            deletedAt: null,
+            isVerified: true,
+            isEmailVerified: true,
+          },
           ["Department"]
         );
+      res.locals.data = doctors;
+      this.send(res);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // admin
+  public async getDoctorsByHospitalIdAdmin(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const doctors: DoctorAttributes[] = await this.doctor.getAll({
+        HospitalId: req.user.payload.id,
+        deletedAt: null,
+      });
+      // const doctors: DoctorAttributes[] =
+      //   await this.doctor.getAllWithAssociation(
+      //     {
+      //       HospitalId: req.user.payload.id,
+      //       deletedAt: null,
+      //     },
+      //     ["Department"]
+      //   );
       res.locals.data = doctors;
       this.send(res);
     } catch (err) {
@@ -67,7 +100,7 @@ export default class DoctorController extends BaseController {
     try {
       const id = req.params.id;
       const doctor: DoctorAttributes = await this.doctor.getOneWithAssociation(
-        { id: id, deletedAt: null },
+        { id: id, deletedAt: null, isVerified: true, isEmailVerified: true },
         ["Department", "Hospital"],
         ["createdAt", "updatedAt", "deletedAt", "AddressId", "password"]
       );
@@ -298,6 +331,38 @@ export default class DoctorController extends BaseController {
           "Your appointment has been request, please check your email after 10 mins for the confirmations",
       };
       super.send(res, StatusCodes.CREATED);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // get all the counts of docter of a hospital -> admin
+  public async getDoctorsCount(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const verifiedDoctor = await this.doctor.count({
+        HospitalId: req.user.payload.id,
+        isVerified: true,
+        isEmailVerified: true,
+      });
+
+      const pendingDoctor = await this.doctor.count({
+        [Op.or]: {
+          isVerified: false,
+          isEmailVerified: false,
+        },
+        HospitalId: req.user.payload.id,
+      });
+
+      res.locals.data = {
+        success: true,
+        verifiedDoctor,
+        pendingDoctor,
+      };
+      super.send(res, StatusCodes.OK);
     } catch (err) {
       next(err);
     }

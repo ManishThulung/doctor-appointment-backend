@@ -9,10 +9,15 @@ import { HospitalService } from "../services/HospitalService";
 import BaseController from "./BaseController";
 import { EmailService } from "../services/EmailService";
 import { Op } from "sequelize";
+import { EncryptDecrypt } from "../utils/EncryptDecrypt";
+import { JwtToken } from "../utils/JwtToken";
+import { Role } from "../types/enums.types";
 
 export default class HospitalController extends BaseController {
   private hospital: HospitalService<Hospital>;
   private address: AddressService<Address>;
+  private hash: EncryptDecrypt;
+  private jwt: JwtToken;
 
   constructor() {
     super();
@@ -23,8 +28,60 @@ export default class HospitalController extends BaseController {
     this.address = new AddressService({
       repository: Address,
     });
+    this.hash = new EncryptDecrypt();
+    this.jwt = new JwtToken();
   }
 
+  public async hospitalAdminLogin(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { email, password } = req.body;
+      console.log(email, password);
+      const hospital = await this.hospital.getOne({
+        email,
+        deletedAt: null,
+        isVerified: true,
+        isEmailVerified: true,
+      });
+      console.log(hospital)
+      if (!hospital) {
+        throw new ApiError("Hospital not found!", StatusCodes.NOT_FOUND);
+      }
+
+      const isPasswordCorrect = await this.hash.decryptData(
+        password,
+        hospital?.password
+      );
+      if (!isPasswordCorrect) {
+        throw new ApiError("Invalid credentials!", StatusCodes.NOT_FOUND);
+      }
+
+      const payload = {
+        id: hospital.id,
+        role: Role.Admin,
+        email: hospital.email,
+        name: hospital.name,
+      };
+      const accessToken = await this.jwt.generateToken(payload);
+      res.locals.data = {
+        success: true,
+        accessToken,
+        hospital: { ...payload },
+        message: "Login successful",
+      };
+      res.cookie("token", accessToken, {
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        httpOnly: true,
+        expires: new Date(Date.now() + 86400 * 100000), // 1 day
+      });
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
   public async getHospitals(
     req: Request,
     res: Response,
@@ -43,6 +100,7 @@ export default class HospitalController extends BaseController {
     }
   }
 
+  // get all the list of hospitals -> SuperAdmin
   public async getHospitalsAdmin(
     req: Request,
     res: Response,
@@ -240,14 +298,14 @@ export default class HospitalController extends BaseController {
       const pendingHospital = await this.hospital.count({
         [Op.or]: {
           isVerified: false,
-        isEmailVerified: false,
+          isEmailVerified: false,
         },
-      },);
+      });
 
       res.locals.data = {
         success: true,
         verifiedHospital,
-        pendingHospital
+        pendingHospital,
       };
       super.send(res, StatusCodes.OK);
     } catch (err) {
