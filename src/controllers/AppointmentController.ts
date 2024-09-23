@@ -107,4 +107,59 @@ export default class AppointmentController extends BaseController {
       next(err);
     }
   }
+
+  // admin
+  public async getAppointments(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const appointments = await this.appointment.getAllWithAssociation(
+        {
+          deletedAt: null,
+        },
+        ["Doctor", "User"]
+      );
+      if (!appointments) {
+        throw new ApiError("Appointments not found", StatusCodes.NOT_FOUND);
+      }
+
+      res.locals.data = {
+        success: true,
+        appointments,
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // doctor
+  public async getAppointmentsOfDoctor(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const appointments = await this.appointment.getAllWithAssociation(
+        {
+          deletedAt: null,
+          DoctorId: req.user.payload.id
+        },
+        ["Doctor", "User"]
+      );
+      if (!appointments) {
+        throw new ApiError("Appointments not found", StatusCodes.NOT_FOUND);
+      }
+
+      res.locals.data = {
+        success: true,
+        appointments,
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
 }

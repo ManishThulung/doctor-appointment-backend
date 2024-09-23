@@ -35,9 +35,6 @@ class Appointment
   public canceledAt!: Date;
   public approvedAt!: Date;
   public deletedAt!: Date;
-  // public DoctorId!: string;
-  // public PatientId!: string;
-  // public HospitalId!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
