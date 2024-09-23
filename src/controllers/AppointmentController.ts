@@ -94,9 +94,8 @@ export default class AppointmentController extends BaseController {
       await emailService.emailSender(
         isExistDoctor.email,
         "New Appointment booking request",
-        `Click here to accept the new appointment ${process.env.BASE_URI}/doctor/appointment/verify?doctorId=${doctorId}&patientId=${id}&patientEmail=${email}`[
-          isExistHospital.email
-        ]
+        `Click here to accept the new appointment ${process.env.BASE_URI}/doctor/appointment/verify?doctorId=${doctorId}&patientId=${id}&patientEmail=${email}`,
+        [isExistHospital.email]
       );
 
       res.locals.data = {

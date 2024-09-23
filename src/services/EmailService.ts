@@ -39,7 +39,6 @@ export class EmailService<T> extends Repository<T> {
         info = await transporter.sendMail({
           from: process.env.MAIL_USER,
           to: email,
-          cc: ccEmail,
           subject: title,
           html: body,
         });
@@ -47,6 +46,7 @@ export class EmailService<T> extends Repository<T> {
         info = await transporter.sendMail({
           from: process.env.MAIL_USER,
           to: email,
+          cc: ccEmail,
           subject: title,
           html: body,
         });
