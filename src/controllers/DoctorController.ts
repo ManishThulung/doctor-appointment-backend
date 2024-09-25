@@ -1,21 +1,18 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import { Op } from "sequelize";
 import ApiError from "../abstractions/ApiError";
-import {
-  Appointment,
-  AppointmentCreationAttributes,
-} from "../database/models/Appointment";
 import {
   Doctor,
   DoctorAttributes,
   DoctorCreationAttributes,
 } from "../database/models/Doctor";
-import { AppointmentService } from "../services/AppointmentService";
 import { DoctorService } from "../services/DoctorService";
 import { EmailService } from "../services/EmailService";
+import { Role } from "../types/enums.types";
 import { EncryptDecrypt } from "../utils/EncryptDecrypt";
+import { JwtToken } from "../utils/JwtToken";
 import BaseController from "./BaseController";
-import { Op } from "sequelize";
 
 export default class DoctorController extends BaseController {
   private doctor: DoctorService<Doctor>;
@@ -187,6 +184,57 @@ export default class DoctorController extends BaseController {
     }
   }
 
+  public async doctorLogin(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const hash = new EncryptDecrypt();
+    const jwt = new JwtToken();
+    try {
+      const { email, password } = req.body;
+      const doctor = await this.doctor.getOne({
+        email,
+        deletedAt: null,
+        isVerified: true,
+        isEmailVerified: true,
+      });
+      if (!doctor) {
+        throw new ApiError("Doctor not found!", StatusCodes.NOT_FOUND);
+      }
+
+      const isPasswordCorrect = await hash.decryptData(
+        password,
+        doctor?.password
+      );
+      if (!isPasswordCorrect) {
+        throw new ApiError("Invalid credentials!", StatusCodes.NOT_FOUND);
+      }
+
+      const payload = {
+        id: doctor.id,
+        role: Role.Doctor,
+        email: doctor.email,
+        name: doctor.name,
+      };
+      const accessToken = await jwt.generateToken(payload);
+      res.locals.data = {
+        success: true,
+        accessToken,
+        doctor: { ...payload },
+        message: "Login successful",
+      };
+      res.cookie("token", accessToken, {
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        httpOnly: true,
+        expires: new Date(Date.now() + 86400 * 100000), // 1 day
+      });
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   public async verifyEmail(
     req: Request,
     res: Response,
@@ -273,8 +321,6 @@ export default class DoctorController extends BaseController {
   //     next(err);
   //   }
   // }
-
-  
 
   // get all the counts of docter of a hospital -> admin
   public async getDoctorsCount(

@@ -19,7 +19,8 @@ export class Repository<T> {
     let result = await this.dbContext.findAll({
       include,
       where: whereClause,
-      attributes: { exclude: ["updatedAt", "deletedAt"] },
+      attributes: { exclude: ["createdAt", "updatedAt", "deletedAt"] },
+      order: [['createdAt', 'DESC']]
     });
     return result;
   }
@@ -49,6 +50,13 @@ export class Repository<T> {
 
   async update<S>(whereClause: any, payload: S): Promise<T> {
     let result = await this.dbContext.update(payload, {
+      where: whereClause,
+    });
+    return result;
+  }
+
+  async delete(whereClause: any): Promise<T> {
+    let result = await this.dbContext.update({
       where: whereClause,
     });
     return result;

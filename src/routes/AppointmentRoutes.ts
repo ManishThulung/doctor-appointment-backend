@@ -31,4 +31,20 @@ router.get(
   }
 );
 
+router.get(
+  "/me",
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => {
+    new AppointmentController().getUserAppointments(req, res, next);
+  }
+);
+
+router.post(
+  "/me/cancel",
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => {
+    new AppointmentController().cancelAppointment(req, res, next);
+  }
+);
+
 export default router;

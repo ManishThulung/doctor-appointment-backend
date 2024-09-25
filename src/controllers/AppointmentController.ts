@@ -13,10 +13,12 @@ import { DoctorService } from "../services/DoctorService";
 import { EmailService } from "../services/EmailService";
 import { HospitalService } from "../services/HospitalService";
 import BaseController from "./BaseController";
+import { AppointmentStatus } from "../types/enums.types";
 
 export default class AppointmentController extends BaseController {
   private appointment: AppointmentService<Appointment>;
   private hospital: HospitalService<Hospital>;
+  private email: EmailService<Hospital>;
 
   constructor() {
     super();
@@ -27,6 +29,7 @@ export default class AppointmentController extends BaseController {
       repository: Hospital,
       logger,
     });
+    this.email = new EmailService({ repository: Hospital });
   }
 
   public async createAppointment(
@@ -35,7 +38,6 @@ export default class AppointmentController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const emailService = new EmailService({ repository: Hospital });
       const doctor: DoctorService<Doctor> = new DoctorService({
         repository: Doctor,
       });
@@ -68,8 +70,6 @@ export default class AppointmentController extends BaseController {
         timeSlot,
       });
 
-      console.log(isTimeSlotBooked, "isTimeSlotBooked");
-
       if (isTimeSlotBooked?.DoctorId === doctorId) {
         throw new ApiError(
           "This time slot is not available",
@@ -91,7 +91,7 @@ export default class AppointmentController extends BaseController {
         throw new ApiError("Something went wrong", 500, false, "ServerError");
       }
 
-      await emailService.emailSender(
+      await this.email.emailSender(
         isExistDoctor.email,
         "New Appointment booking request",
         `Click here to accept the new appointment ${process.env.BASE_URI}/doctor/appointment/verify?doctorId=${doctorId}&patientId=${id}&patientEmail=${email}`,
@@ -145,7 +145,7 @@ export default class AppointmentController extends BaseController {
       const appointments = await this.appointment.getAllWithAssociation(
         {
           deletedAt: null,
-          DoctorId: req.user.payload.id
+          DoctorId: req.user.payload.id,
         },
         ["Doctor", "User"]
       );
@@ -156,6 +156,115 @@ export default class AppointmentController extends BaseController {
       res.locals.data = {
         success: true,
         appointments,
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // user
+  public async getUserAppointments(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const appointments = await this.appointment.getAllWithAssociation(
+        {
+          deletedAt: null,
+          UserId: req.user.payload.id,
+        },
+        ["Doctor", "User", "Hospital"]
+      );
+      if (!appointments) {
+        throw new ApiError("Appointments not found", StatusCodes.NOT_FOUND);
+      }
+
+      res.locals.data = {
+        success: true,
+        appointments,
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // user
+  public async cancelAppointment(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const id = req.body.id;
+
+      const appointment: any = await this.appointment.getOneWithAssociation(
+        { id },
+        ["Hospital", "Doctor", "User"],
+        ["createdAt", "updatedAt", "deletedAt", "HospitalId", "DoctorId", "UserId"]
+      );
+      if (!appointment) {
+        throw new ApiError("Appointment not found", StatusCodes.NOT_FOUND);
+      }
+
+      const [startTime] = appointment?.timeSlot.split(" - ");
+      const appointmentDateTime = new Date(
+        `${appointment?.date} ${startTime}`
+      );
+      const currentDateTime = new Date();
+
+      const oneHourBeforeAppointment = new Date(
+        appointmentDateTime.getTime() - 60 * 60 * 1000
+      );
+      let isCancellable: boolean;
+      // Check if the current time is before one hour before the appointment
+      if (currentDateTime < oneHourBeforeAppointment) {
+        isCancellable = true;
+      } else {
+        isCancellable = false;
+      }
+
+      if (!isCancellable) {
+        throw new ApiError(
+          "Cannot cancel the appointment",
+          StatusCodes.FORBIDDEN
+        );
+      }
+
+      const cancel = await this.appointment.update(
+        { id },
+        { deleteAt: currentDateTime, status: AppointmentStatus.Canceled }
+      );
+
+      if (!cancel) {
+        throw new ApiError(
+          "Cannot cancel the appointment",
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      await this.email.emailSender(
+        appointment?.User?.email,
+        "Appointment cancelled",
+        `Your appointment cancellation has been approved`
+      );
+
+      await this.email.emailSender(
+        appointment?.Doctor?.email,
+        "Appointment cancelled",
+        `Patient: ${appointment?.User?.email} has cancelled the appointment with you at the given date.
+        Pateint Name: ${appointment?.User?.email}
+        Appointment Date: ${appointment?.date}
+        Time-slot: ${appointment?.timeSlot}
+        `,
+        [appointment?.Hospital?.email]
+      );
+
+      res.locals.data = {
+        success: true,
+        message: "Your appointment has been canceled",
       };
       super.send(res, StatusCodes.OK);
     } catch (err) {

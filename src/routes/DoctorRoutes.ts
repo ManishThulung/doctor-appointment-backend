@@ -49,6 +49,10 @@ router.post(
   }
 );
 
+router.post("/login", (req: Request, res: Response, next: NextFunction) => {
+  new DoctorController().doctorLogin(req, res, next);
+});
+
 router.get(
   "/count/doctor",
   authenticate,
