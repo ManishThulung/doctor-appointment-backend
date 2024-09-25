@@ -47,4 +47,34 @@ router.post(
   }
 );
 
+// cancel by doctor
+router.post(
+  "/doctor/cancel",
+  authenticate,
+  authorize([Role.Doctor]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new AppointmentController().cancelAppointmentByDoctor(req, res, next);
+  }
+);
+
+// cancel by doctor
+router.patch(
+  "/doctor/approve",
+  authenticate,
+  authorize([Role.Doctor]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new AppointmentController().approveAppointmentByDoctor(req, res, next);
+  }
+);
+
+// cancel by doctor
+router.patch(
+  "/doctor/status",
+  authenticate,
+  authorize([Role.Doctor]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new AppointmentController().updateStatusAppointmentByDoctor(req, res, next);
+  }
+);
+
 export default router;

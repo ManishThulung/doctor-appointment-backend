@@ -43,7 +43,7 @@ export default class AppointmentController extends BaseController {
       });
 
       const { date, timeSlot, doctorId, hospitalId } = req.body;
-      const { id, email } = req.user.payload;
+      const { id, name } = req.user.payload;
 
       const isExistDoctor = await doctor.getOne({
         id: doctorId,
@@ -94,7 +94,13 @@ export default class AppointmentController extends BaseController {
       await this.email.emailSender(
         isExistDoctor.email,
         "New Appointment booking request",
-        `Click here to accept the new appointment ${process.env.BASE_URI}/doctor/appointment/verify?doctorId=${doctorId}&patientId=${id}&patientEmail=${email}`,
+        `A new appointment request has been made for the following details,
+        Pateint Name: ${name}
+        Appointment Date: ${date}
+        Time-slot: ${timeSlot}
+
+        Plase approve the appoinet ASAP.
+        `,
         [isExistHospital.email]
       );
 
@@ -203,16 +209,21 @@ export default class AppointmentController extends BaseController {
       const appointment: any = await this.appointment.getOneWithAssociation(
         { id },
         ["Hospital", "Doctor", "User"],
-        ["createdAt", "updatedAt", "deletedAt", "HospitalId", "DoctorId", "UserId"]
+        [
+          "createdAt",
+          "updatedAt",
+          "deletedAt",
+          "HospitalId",
+          "DoctorId",
+          "UserId",
+        ]
       );
       if (!appointment) {
         throw new ApiError("Appointment not found", StatusCodes.NOT_FOUND);
       }
 
       const [startTime] = appointment?.timeSlot.split(" - ");
-      const appointmentDateTime = new Date(
-        `${appointment?.date} ${startTime}`
-      );
+      const appointmentDateTime = new Date(`${appointment?.date} ${startTime}`);
       const currentDateTime = new Date();
 
       const oneHourBeforeAppointment = new Date(
@@ -254,8 +265,8 @@ export default class AppointmentController extends BaseController {
       await this.email.emailSender(
         appointment?.Doctor?.email,
         "Appointment cancelled",
-        `Patient: ${appointment?.User?.email} has cancelled the appointment with you at the given date.
-        Pateint Name: ${appointment?.User?.email}
+        `Patient: ${appointment?.User?.name} has cancelled the appointment with you at the given date.
+        Pateint Name: ${appointment?.User?.name}
         Appointment Date: ${appointment?.date}
         Time-slot: ${appointment?.timeSlot}
         `,
@@ -265,6 +276,240 @@ export default class AppointmentController extends BaseController {
       res.locals.data = {
         success: true,
         message: "Your appointment has been canceled",
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // DOctor
+  public async cancelAppointmentByDoctor(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const id = req.body.id;
+      const docterId = req.user.payload.id;
+
+      const appointment: any = await this.appointment.getOneWithAssociation(
+        { id, DoctorId: docterId },
+        ["Hospital", "Doctor", "User"],
+        [
+          "createdAt",
+          "updatedAt",
+          "deletedAt",
+          "HospitalId",
+          "DoctorId",
+          "UserId",
+        ]
+      );
+      if (!appointment) {
+        throw new ApiError("Appointment not found", StatusCodes.NOT_FOUND);
+      }
+
+      const [startTime] = appointment?.timeSlot.split(" - ");
+      const appointmentDateTime = new Date(`${appointment?.date} ${startTime}`);
+      const currentDateTime = new Date();
+
+      const oneHourBeforeAppointment = new Date(
+        appointmentDateTime.getTime() - 60 * 60 * 1000
+      );
+      let isCancellable: boolean;
+      // Check if the current time is before one hour before the appointment
+      if (currentDateTime < oneHourBeforeAppointment) {
+        isCancellable = true;
+      } else {
+        isCancellable = false;
+      }
+
+      if (!isCancellable) {
+        throw new ApiError(
+          "Cannot cancel the appointment",
+          StatusCodes.FORBIDDEN
+        );
+      }
+
+      const cancel = await this.appointment.update(
+        { id },
+        { deleteAt: currentDateTime, status: AppointmentStatus.Canceled }
+      );
+
+      if (!cancel) {
+        throw new ApiError(
+          "Cannot cancel the appointment",
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      await this.email.emailSender(
+        appointment?.User?.email,
+        "Appointment cancelled",
+        `Dear, ${appointment?.User?.name} we are sorry for the inconvenience caused by us. Your appintment with the doctor ${appointment.Doctor.name} has been canceled due to some unavoidable situation at the given date.
+        Pateint Name: ${appointment?.User?.email}
+        Appointment Date: ${appointment?.date}
+        Time-slot: ${appointment?.timeSlot}
+        `,
+        [appointment?.Hospital?.email, appointment?.Doctor?.email]
+      );
+
+      res.locals.data = {
+        success: true,
+        message: "Your appointment has been canceled",
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // DOctor
+  public async approveAppointmentByDoctor(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const id = req.body.id;
+      const docterId = req.user.payload.id;
+
+      const appointment: any = await this.appointment.getOneWithAssociation(
+        { id, DoctorId: docterId },
+        ["Hospital", "Doctor", "User"],
+        [
+          "createdAt",
+          "updatedAt",
+          "deletedAt",
+          "HospitalId",
+          "DoctorId",
+          "UserId",
+        ]
+      );
+      if (!appointment) {
+        throw new ApiError("Appointment not found", StatusCodes.NOT_FOUND);
+      }
+
+      const [startTime] = appointment?.timeSlot.split(" - ");
+      const appointmentDateTime = new Date(`${appointment?.date} ${startTime}`);
+      const currentDateTime = new Date();
+
+      const oneHourBeforeAppointment = new Date(
+        appointmentDateTime.getTime() - 60 * 60 * 1000
+      );
+      let isApprovable: boolean;
+      // Check if the current time is before one hour before the appointment
+      if (currentDateTime < oneHourBeforeAppointment) {
+        isApprovable = true;
+      } else {
+        isApprovable = false;
+      }
+
+      if (!isApprovable) {
+        throw new ApiError(
+          "Cannot approve the appointment",
+          StatusCodes.FORBIDDEN
+        );
+      }
+
+      const approve = await this.appointment.update(
+        { id, deleteAt: null },
+        { deleteAt: currentDateTime, status: AppointmentStatus.Approved }
+      );
+
+      if (!approve) {
+        throw new ApiError(
+          "Cannot approve the appointment",
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      await this.email.emailSender(
+        appointment?.User?.email,
+        "Appointment approved",
+        `Dear, ${appointment?.User?.name} your appintment with the doctor ${appointment.Doctor.name} has been officially approved. Plase arrive at the hospital at the given date.
+        Hospital Name: ${appointment?.Hospital?.name}
+        Doctor Name: ${appointment?.Doctor?.name}
+        Pateint Name: ${appointment?.User?.name}
+        Appointment Date: ${appointment?.date}
+        Time-slot: ${appointment?.timeSlot}
+        `,
+        [appointment?.Hospital?.email, appointment?.Doctor?.email]
+      );
+
+      res.locals.data = {
+        success: true,
+        message: "Your appointment has been approved",
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // DOctor
+  public async updateStatusAppointmentByDoctor(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const id = req.body.id;
+      const docterId = req.user.payload.id;
+
+      const appointment: any = await this.appointment.getOneWithAssociation(
+        { id, DoctorId: docterId },
+        ["Hospital", "Doctor", "User"],
+        [
+          "createdAt",
+          "updatedAt",
+          "deletedAt",
+          "HospitalId",
+          "DoctorId",
+          "UserId",
+        ]
+      );
+      if (!appointment) {
+        throw new ApiError("Appointment not found", StatusCodes.NOT_FOUND);
+      }
+
+      // const [startTime] = appointment?.timeSlot.split(" - ");
+      // const appointmentDateTime = new Date(`${appointment?.date} ${startTime}`);
+      const currentDateTime = new Date();
+
+      // const oneHourBeforeAppointment = new Date(
+      //   appointmentDateTime.getTime() - 60 * 60 * 1000
+      // );
+      // let isCancellable: boolean;
+      // // Check if the current time is before one hour before the appointment
+      // if (currentDateTime < oneHourBeforeAppointment) {
+      //   isCancellable = true;
+      // } else {
+      //   isCancellable = false;
+      // }
+
+      // if (!isCancellable) {
+      //   throw new ApiError(
+      //     "Cannot cancel the appointment",
+      //     StatusCodes.FORBIDDEN
+      //   );
+      // }
+
+      const upate = await this.appointment.update(
+        { id, DoctorId: docterId },
+        { updatedAt: currentDateTime, status: AppointmentStatus.Completed }
+      );
+
+      if (!upate) {
+        throw new ApiError(
+          "Cannot upate the appointment staus",
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      res.locals.data = {
+        success: true,
+        message: "Appointment status has been updated",
       };
       super.send(res, StatusCodes.OK);
     } catch (err) {
