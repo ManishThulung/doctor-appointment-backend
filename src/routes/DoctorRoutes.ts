@@ -62,4 +62,13 @@ router.get(
   }
 );
 
+router.patch(
+  "/approve",
+  authenticate,
+  authorize([Role.Admin]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().approveDoctor(req, res, next);
+  }
+);
+
 export default router;

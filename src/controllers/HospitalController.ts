@@ -46,7 +46,7 @@ export default class HospitalController extends BaseController {
         isVerified: true,
         isEmailVerified: true,
       });
-      console.log(hospital)
+      console.log(hospital);
       if (!hospital) {
         throw new ApiError("Hospital not found!", StatusCodes.NOT_FOUND);
       }
@@ -306,6 +306,67 @@ export default class HospitalController extends BaseController {
         success: true,
         verifiedHospital,
         pendingHospital,
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // approve -> super admin
+  public async approveHospital(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const hospitalId = req.body.id;
+      // const hospitalId = req.user.payload.id;
+
+      const email = new EmailService({ repository: Hospital });
+
+      const verified = await this.hospital.getOne({
+        id: hospitalId,
+        deletedAt: null,
+        isVerified: true,
+        isEmailVerified: true,
+      });
+      if (verified) {
+        throw new ApiError(
+          "Hospital already verified",
+          StatusCodes.BAD_REQUEST
+        );
+      }
+
+      const isEmailverified = await this.hospital.getOne({
+        id: hospitalId,
+        deletedAt: null,
+        isEmailVerified: true,
+      });
+      if (!isEmailverified) {
+        throw new ApiError("Verify your email first", StatusCodes.BAD_REQUEST);
+      }
+
+      const verify = await this.hospital.update(
+        { id: hospitalId, deletedAt: null },
+        { isVerified: true }
+      );
+      if (!verify) {
+        throw new ApiError(
+          "Something went wrong",
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      await email.emailSender(
+        isEmailverified.email,
+        "Hospital verification approved",
+        "Your hospital verification approval process has been completed. You can now log in to the system with your registered credentials."
+      );
+
+      res.locals.data = {
+        success: true,
+        message: "Hospital verification successful",
       };
       super.send(res, StatusCodes.OK);
     } catch (err) {

@@ -10,6 +10,7 @@ import { ReviewService } from "../services/ReviewService";
 import BaseController from "./BaseController";
 import { Appointment } from "../database/models/Appointment";
 import { AppointmentService } from "../services/AppointmentService";
+import { AppointmentStatus } from "../types/enums.types";
 
 export default class ReviewController extends BaseController {
   private review: ReviewService<Review>;
@@ -93,6 +94,7 @@ export default class ReviewController extends BaseController {
       const isAllowed = await appointment.getOne({
         UserId: id,
         DoctorId: doctorId,
+        status: AppointmentStatus.Completed
       });
       if (!isAllowed) {
         throw new ApiError(

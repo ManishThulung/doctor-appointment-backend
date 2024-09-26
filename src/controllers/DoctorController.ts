@@ -70,18 +70,14 @@ export default class DoctorController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const doctors: DoctorAttributes[] = await this.doctor.getAll({
-        HospitalId: req.user.payload.id,
-        deletedAt: null,
-      });
-      // const doctors: DoctorAttributes[] =
-      //   await this.doctor.getAllWithAssociation(
-      //     {
-      //       HospitalId: req.user.payload.id,
-      //       deletedAt: null,
-      //     },
-      //     ["Department"]
-      //   );
+      const doctors: DoctorAttributes[] =
+        await this.doctor.getAllWithAssociation(
+          {
+            HospitalId: req.user.payload.id,
+            deletedAt: null,
+          },
+          ["Department"]
+        );
       res.locals.data = doctors;
       this.send(res);
     } catch (err) {
@@ -260,69 +256,6 @@ export default class DoctorController extends BaseController {
     }
   }
 
-  // public async createReview(
-  //   req: Request,
-  //   res: Response,
-  //   next: NextFunction
-  // ): Promise<void> {
-  //   try {
-  //     const emailService = new EmailService({ repository: Doctor });
-  //     const appointment = new AppointmentService({ repository: Appointment });
-  //     const { id } = req.query;
-
-  //     const { date, timeSlot, doctorId, patientId, hospitalId, patientEmail } =
-  //       req.body;
-
-  //     const isExistDoctor = await this.doctor.getOne({ id });
-  //     if (!isExistDoctor) {
-  //       throw new ApiError("Doctor not found", StatusCodes.NOT_FOUND);
-  //     }
-
-  //     const isTimeSlotBooked = await appointment.getOne({
-  //       date,
-  //       timeSlot,
-  //       DoctorId: doctorId,
-  //     });
-
-  //     if (isTimeSlotBooked) {
-  //       throw new ApiError(
-  //         "This time slot is not available",
-  //         StatusCodes.CONFLICT
-  //       );
-  //     }
-
-  //     const payload: AppointmentCreationAttributes = {
-  //       date,
-  //       timeSlot,
-  //       DoctorId: doctorId,
-  //       PatientId: patientId,
-  //       HospitalId: hospitalId,
-  //     };
-
-  //     const newAppointment: any =
-  //       await appointment.create<AppointmentCreationAttributes>(payload);
-  //     if (!newAppointment) {
-  //       throw new ApiError("Something went wrong", 500, false, "ServerError");
-  //     }
-
-  //     await emailService.emailSender(
-  //       isExistDoctor.email,
-  //       "New Appointment booking request",
-  //       `Click here to accept the new booking http://localhost:8000/api/doctor/email/verify?id=${patientId}&email=${patientEmail}`
-  //     );
-
-  //     res.locals.data = {
-  //       success: true,
-  //       message:
-  //         "Your appointment has been created, please check your email for the confirmations",
-  //     };
-  //     super.send(res, StatusCodes.CREATED);
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // }
-
-  // get all the counts of docter of a hospital -> admin
   public async getDoctorsCount(
     req: any,
     res: Response,
@@ -347,6 +280,64 @@ export default class DoctorController extends BaseController {
         success: true,
         verifiedDoctor,
         pendingDoctor,
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // approve -> admin
+  public async approveDoctor(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const doctordId = req.body.id;
+      const hospitalId = req.user.payload.id;
+
+      const email = new EmailService({ repository: Doctor });
+
+      const verified = await this.doctor.getOne({
+        id: doctordId,
+        deletedAt: null,
+        isVerified: true,
+        isEmailVerified: true,
+      });
+      if (verified) {
+        throw new ApiError("Docter already verified", StatusCodes.BAD_REQUEST);
+      }
+
+      const isEmailverified = await this.doctor.getOne({
+        id: doctordId,
+        deletedAt: null,
+        isEmailVerified: true,
+      });
+      if (!isEmailverified) {
+        throw new ApiError("Verify your email first", StatusCodes.BAD_REQUEST);
+      }
+
+      const verify = await this.doctor.update(
+        { id: doctordId, HospitalId: hospitalId, deletedAt: null },
+        { isVerified: true }
+      );
+      if (!verify) {
+        throw new ApiError(
+          "Something went wrong",
+          StatusCodes.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      await email.emailSender(
+        isEmailverified.email,
+        "Doctor verification approved",
+        "Your doctor verification approval process has been completed. You can now log in to the system with your registered credentials."
+      );
+
+      res.locals.data = {
+        success: true,
+        message: "Doctor verification successful",
       };
       super.send(res, StatusCodes.OK);
     } catch (err) {
