@@ -7,7 +7,7 @@ import { Role } from "../types/enums.types";
 const router = Router();
 
 const uploadDocuments = upload.fields([
-  { name: "avatar", maxCount: 1 },
+  { name: "avatar", maxCount: 2 },
   { name: "certificate", maxCount: 9 },
 ]);
 

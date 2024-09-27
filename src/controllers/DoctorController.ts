@@ -28,17 +28,38 @@ export default class DoctorController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
+      const whereConditions: any = {
+        deletedAt: null,
+        isVerified: true,
+        isEmailVerified: true,
+      };
+
       const doctors: DoctorAttributes[] =
-        await this.doctor.getAllWithAssociation(
-          { deletedAt: null, isVerified: true, isEmailVerified: true },
-          ["Department"]
-        );
+        await this.doctor.getAllWithAssociation(whereConditions, [
+          "Department",
+        ]);
+      // const { search } = req.query;
+
+      // if (search) {
+      //   whereConditions.name = {
+      //     [Op.iLike]: `%${search}%`, // Add the search query dynamically
+      //   };
+      // }
+
+      // console.log(whereConditions, "whereConditions");
+
+      // const doctors: DoctorAttributes[] =
+      //   await this.doctor.getAllWithAssociation(whereConditions, [
+      //     "Department",
+      //   ]);
+
       res.locals.data = doctors;
       this.send(res);
     } catch (err) {
       next(err);
     }
   }
+
   public async getDoctorsByHospitalId(
     req: Request,
     res: Response,
@@ -136,7 +157,6 @@ export default class DoctorController extends BaseController {
       }
 
       if (!req.files || req.files.length === 0) {
-        console.log(req.files, "req.files");
         throw new ApiError(
           "Upload fail",
           StatusCodes.BAD_REQUEST,
