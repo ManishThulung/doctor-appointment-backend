@@ -6,7 +6,8 @@ import { User } from "./User";
 interface ReviewAttributes {
   id: string;
   deletedAt: Date | null;
-  rating: string;
+  rating: number;
+  polarity: any;
   review: string;
   userId?: string;
   doctorId?: string;
@@ -20,7 +21,8 @@ class Review
   implements ReviewAttributes
 {
   public id!: string;
-  public rating!: string;
+  public rating!: number;
+  public polarity!: any;
   public review!: string;
   public deletedAt!: Date;
   public readonly createdAt!: Date;
@@ -36,6 +38,10 @@ Review.init(
     },
     rating: {
       type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    polarity: {
+      type: DataTypes.DECIMAL,
       allowNull: false,
     },
     review: {

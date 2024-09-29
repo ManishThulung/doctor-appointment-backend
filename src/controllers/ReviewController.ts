@@ -11,6 +11,8 @@ import BaseController from "./BaseController";
 import { Appointment } from "../database/models/Appointment";
 import { AppointmentService } from "../services/AppointmentService";
 import { AppointmentStatus } from "../types/enums.types";
+import natural from "natural";
+import { wordDict } from "../utils/LexicalConstant";
 
 export default class ReviewController extends BaseController {
   private review: ReviewService<Review>;
@@ -81,7 +83,6 @@ export default class ReviewController extends BaseController {
     }
   }
 
-
   public async createReview(
     req: any,
     res: Response,
@@ -94,18 +95,26 @@ export default class ReviewController extends BaseController {
       const isAllowed = await appointment.getOne({
         UserId: id,
         DoctorId: doctorId,
-        status: AppointmentStatus.Completed
+        status: AppointmentStatus.Completed,
       });
       if (!isAllowed) {
         throw new ApiError(
-          "You are not allowd to proved review",
-          StatusCodes.UNAUTHORIZED
+          "You are not allowd to provide review",
+          StatusCodes.FORBIDDEN
         );
       }
+
+      const Analyzer = natural.SentimentAnalyzer;
+      const stemmer = natural.PorterStemmer;
+      const analyzer = new Analyzer("English", stemmer, "afinn");
+      const lexData = this.convertToStandard(review);
+
+      const result = analyzer.getSentiment(lexData.split(" "));
 
       const payload = {
         rating,
         review,
+        polarity: result,
         UserId: id,
         DoctorId: doctorId,
       };
@@ -122,5 +131,20 @@ export default class ReviewController extends BaseController {
     } catch (err) {
       next(err);
     }
+  }
+
+  // convert the review into standart english form
+  // eg: i don't like it => i do not like it
+  private convertToStandard(text: string) {
+    const data = text.split(" ");
+    data.forEach((word, index) => {
+      Object.keys(wordDict).forEach((key) => {
+        if (key === word.toLowerCase()) {
+          data[index] = wordDict[key];
+        }
+      });
+    });
+
+    return data.join(" ");
   }
 }

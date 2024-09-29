@@ -189,10 +189,12 @@ export default class HospitalController extends BaseController {
         throw new ApiError("Unable to create address", 500);
       }
 
+      const hashedPassword = await this.hash.encryptData(password);
+
       const payload = {
         name,
         email,
-        password,
+        password: hashedPassword,
         type,
         pan,
         phone,

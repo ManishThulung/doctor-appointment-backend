@@ -106,7 +106,7 @@ export default class AppointmentController extends BaseController {
 
       res.locals.data = {
         success: true,
-        message: "Your appointment has been booked",
+        message: "Check your email for the appointment confirmation.",
       };
       super.send(res, StatusCodes.CREATED);
     } catch (err) {

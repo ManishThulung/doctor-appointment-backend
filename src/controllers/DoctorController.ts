@@ -28,30 +28,13 @@ export default class DoctorController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const whereConditions: any = {
-        deletedAt: null,
-        isVerified: true,
-        isEmailVerified: true,
-      };
+      const searchTerm = Array.isArray(req.query.search)
+        ? (req.query.search[0] as string)
+        : (req.query.search as string) || "";
 
-      const doctors: DoctorAttributes[] =
-        await this.doctor.getAllWithAssociation(whereConditions, [
-          "Department",
-        ]);
-      // const { search } = req.query;
-
-      // if (search) {
-      //   whereConditions.name = {
-      //     [Op.iLike]: `%${search}%`, // Add the search query dynamically
-      //   };
-      // }
-
-      // console.log(whereConditions, "whereConditions");
-
-      // const doctors: DoctorAttributes[] =
-      //   await this.doctor.getAllWithAssociation(whereConditions, [
-      //     "Department",
-      //   ]);
+      const doctors: DoctorAttributes[] = await this.doctor.serachDoctor(
+        searchTerm
+      );
 
       res.locals.data = doctors;
       this.send(res);
@@ -113,11 +96,12 @@ export default class DoctorController extends BaseController {
   ): Promise<void> {
     try {
       const id = req.params.id;
-      const doctor: DoctorAttributes = await this.doctor.getOneWithAssociation(
-        { id: id, deletedAt: null, isVerified: true, isEmailVerified: true },
-        ["Department", "Hospital"],
-        ["createdAt", "updatedAt", "deletedAt", "AddressId", "password"]
-      );
+      // const doctor: DoctorAttributes = await this.doctor.getOneWithAssociation(
+      //   { id: id, deletedAt: null, isVerified: true, isEmailVerified: true },
+      //   ["Department", "Hospital", "Review"],
+      //   ["createdAt", "updatedAt", "deletedAt", "AddressId", "password"]
+      // );
+      const doctor: DoctorAttributes = await this.doctor.findOneWithRating(id);
       if (!doctor) {
         throw new ApiError("Doctor not found!", StatusCodes.NOT_FOUND);
       }
