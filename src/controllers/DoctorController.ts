@@ -260,6 +260,7 @@ export default class DoctorController extends BaseController {
     }
   }
 
+  // uthenticated
   public async getDoctorsCount(
     req: any,
     res: Response,
@@ -342,6 +343,29 @@ export default class DoctorController extends BaseController {
       res.locals.data = {
         success: true,
         message: "Doctor verification successful",
+      };
+      super.send(res, StatusCodes.OK);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // public
+  public async getDoctorsCountOfHospital(
+    req: any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const verifiedDoctor = await this.doctor.count({
+        HospitalId: req.params.id,
+        isVerified: true,
+        isEmailVerified: true,
+      });
+
+      res.locals.data = {
+        success: true,
+        verifiedDoctor,
       };
       super.send(res, StatusCodes.OK);
     } catch (err) {

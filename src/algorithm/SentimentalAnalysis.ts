@@ -1,28 +1,14 @@
 const englishAfinnVoca = require("afinn-165");
-const englishAfinnFinancialMarketNewsVoca =
-  require("afinn-165-financialmarketnews").afinnFinancialMarketNews;
-const englishNegations = require("./English/negations_en.json").words;
-const englishSenticonVoca = require("./English/senticon_en.json");
-const englishPatternVoca = require("./English/pattern-sentiment-en.json");
+import englishNegations from "./constants/negetions.json";
 
 // Mapping from type of vocabulary to language to vocabulary
 const languageFiles = {
   afinn: {
     English: [englishAfinnVoca, englishNegations],
   },
-  afinnFinancialMarketNews: {
-    English: [englishAfinnFinancialMarketNewsVoca, englishNegations],
-  },
-  senticon: {
-    English: [englishSenticonVoca, englishNegations],
-  },
-
-  pattern: {
-    English: [englishPatternVoca, englishNegations],
-  },
 };
 
-class SentimentAnalyzer {
+export default class SentimentAnalyzer {
   // private language: any
   private stemmer: any;
   language: any;
@@ -35,7 +21,6 @@ class SentimentAnalyzer {
 
     // this.vocabulary must be a copy of the languageFiles object
     // or in subsequent execution the polarity will be undefined
-    // shallow copy - requires ES6
     if (languageFiles[type]) {
       if (languageFiles[type][language]) {
         if (languageFiles[type][language][0]) {
@@ -51,17 +36,6 @@ class SentimentAnalyzer {
     }
     this.vocabulary = Object.assign({}, languageFiles[type][language][0]);
     Object.setPrototypeOf(this.vocabulary, null);
-    if (type === "senticon") {
-      Object.keys(this.vocabulary).forEach((word) => {
-        this.vocabulary[word] = this.vocabulary[word].pol;
-      });
-    } else {
-      if (type === "pattern") {
-        Object.keys(this.vocabulary).forEach((word) => {
-          this.vocabulary[word] = this.vocabulary[word].polarity;
-        });
-      }
-    }
 
     this.negations = [];
     if (languageFiles[type][language][1] != null) {
@@ -86,16 +60,18 @@ class SentimentAnalyzer {
 
     words.forEach((token) => {
       const lowerCased = token.toLowerCase();
+      // holds words like "not" or "never". If the word is a negation, negator is set to -1 and vice varca
       if (this.negations.indexOf(lowerCased) > -1) {
         negator = -1;
         DEBUG && nrHits++;
       } else {
-        // First try without stemming
+        //  If the word is found, the vocabulary[lowerCased] contains its sentiment score, which is multiplied by negator and added to the score
         if (this.vocabulary[lowerCased] !== undefined) {
           score += negator * this.vocabulary[lowerCased];
           DEBUG && nrHits++;
         } else {
           if (this.stemmer) {
+            // convert running to run
             const stemmedWord = this.stemmer.stem(lowerCased);
             if (this.vocabulary[stemmedWord] !== undefined) {
               score += negator * this.vocabulary[stemmedWord];

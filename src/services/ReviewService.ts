@@ -29,7 +29,8 @@ export class ReviewService<T> extends Repository<T> {
     }
   }
 
-  async findTopDoctors(): Promise<T> {
+  async findTopDoctors(similarityMatrix: any): Promise<any> {
+    console.log(similarityMatrix, "similarityMatrix");
     const topDoctors = await this.review.findAll({
       attributes: [
         "DoctorId",
@@ -58,11 +59,11 @@ export class ReviewService<T> extends Repository<T> {
         [fn("AVG", col("rating")), "DESC"], // Order by average rating
         [fn("AVG", col("polarity")), "DESC"], // Then order by average polarity
       ],
-      limit: 10, // Adjust limit as needed
+      limit: 20, // Adjust limit as needed
       include: [
         {
           model: Doctor,
-          attributes: ["name", "id", "address", "phone", "email"], // Include the doctor's name or other relevant fields
+          attributes: ["name", "id", "address", "phone", "email", "avatar"], // Include the doctor's name or other relevant fields
           include: [
             {
               model: Department,
@@ -73,6 +74,24 @@ export class ReviewService<T> extends Repository<T> {
       ],
     });
 
-    return topDoctors;
+    function getfilteredData(arr, count) {
+      // Create a copy of the array to shuffle
+      let shuffled = [...arr];
+
+      // Fisher-Yates Shuffle Algorithm
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1)); // Random index between 0 and i
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
+      }
+
+      // Return the first 'count' elements of the shuffled array
+      return shuffled.slice(0, count);
+    }
+
+    const elements = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    // Get 5 random elements
+    const randomElements = getfilteredData(topDoctors, 5);
+    return randomElements;
   }
 }

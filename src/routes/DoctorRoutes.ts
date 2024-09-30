@@ -62,6 +62,13 @@ router.get(
   }
 );
 
+router.get(
+  "/count/doctor/:id",
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().getDoctorsCountOfHospital(req, res, next);
+  }
+);
+
 router.patch(
   "/approve",
   authenticate,

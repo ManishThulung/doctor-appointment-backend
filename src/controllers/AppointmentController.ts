@@ -123,6 +123,7 @@ export default class AppointmentController extends BaseController {
     try {
       const appointments = await this.appointment.getAllWithAssociation(
         {
+          HospitalId: req.user.payload.id,
           deletedAt: null,
         },
         ["Doctor", "User"]

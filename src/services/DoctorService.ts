@@ -1,8 +1,7 @@
-import { col, fn, literal, Op, QueryTypes } from "sequelize";
-import { Doctor } from "../database/models/Doctor";
-import { Repository } from "../repository/Repository";
-import { Review } from "../database/models/Review";
+import { col, fn, literal, Op } from "sequelize";
 import { Department } from "../database/models/Department";
+import { Review } from "../database/models/Review";
+import { Repository } from "../repository/Repository";
 
 export class DoctorService<T> extends Repository<T> {
   private doctor: any;
