@@ -29,8 +29,7 @@ export class ReviewService<T> extends Repository<T> {
     }
   }
 
-  async findTopDoctors(similarityMatrix: any): Promise<any> {
-    console.log(similarityMatrix, "similarityMatrix");
+  async findTopDoctorsByQuery(): Promise<T[]> {
     const topDoctors = await this.review.findAll({
       attributes: [
         "DoctorId",
@@ -59,7 +58,7 @@ export class ReviewService<T> extends Repository<T> {
         [fn("AVG", col("rating")), "DESC"], // Order by average rating
         [fn("AVG", col("polarity")), "DESC"], // Then order by average polarity
       ],
-      limit: 20, // Adjust limit as needed
+      limit: 5, // Adjust limit as needed
       include: [
         {
           model: Doctor,
@@ -73,25 +72,153 @@ export class ReviewService<T> extends Repository<T> {
         },
       ],
     });
+    return topDoctors;
+  }
 
-    function getfilteredData(arr, count) {
-      // Create a copy of the array to shuffle
-      let shuffled = [...arr];
+  private async findMostSimilarUser(targetUserId: string) {
+    // Fetch data for the target user (the user we are comparing with)
+    const targetUserReviews = await this.review.findAll({
+      where: {
+        UserId: targetUserId,
+      },
+      attributes: ["DoctorId", "rating", "polarity"],
+      raw: true,
+    });
 
-      // Fisher-Yates Shuffle Algorithm
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1)); // Random index between 0 and i
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
-      }
-
-      // Return the first 'count' elements of the shuffled array
-      return shuffled.slice(0, count);
+    if (targetUserReviews.length === 0) {
+      return;
     }
 
-    const elements = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    // Fetch data for all other users excluding the target user
+    const otherUserReviews = await this.review.findAll({
+      where: {
+        UserId: {
+          [Op.ne]: targetUserId, // Exclude the target user
+        },
+      },
+      attributes: ["UserId", "DoctorId", "rating", "polarity"],
+      raw: true,
+    });
 
-    // Get 5 random elements
-    const randomElements = getfilteredData(topDoctors, 5);
-    return randomElements;
+    const userReviewsMap = {};
+    otherUserReviews.forEach((review) => {
+      if (!userReviewsMap[review.UserId]) {
+        userReviewsMap[review.UserId] = [];
+      }
+      userReviewsMap[review.UserId].push([review.rating, review.polarity]);
+    });
+
+    // Extract the rating vector for the target user
+    const targetUserVectors = targetUserReviews.map((review) => review.rating); // Can also include polarity if needed
+
+    const similarityScores = [];
+
+    // Compare the target user with each other user
+    for (const userId in userReviewsMap) {
+      const otherUserVectors = userReviewsMap[userId].map(
+        (review) => review[0]
+      ); // Rating vector
+
+      // Calculate cosine similarity
+      const similarity = this.cosineSimilarity(
+        targetUserVectors,
+        otherUserVectors
+      );
+
+      // Store userId and similarity score
+      similarityScores.push({ userId, similarity });
+    }
+
+    // Sort the similarity scores in descending order and get the top N users
+    const topSimilarUsers = similarityScores
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, 3);
+    return topSimilarUsers;
+  }
+
+  async findTopDoctorsBySimilarUsers(targetUserId, topNDoctors = 5) {
+    // Get the top 3 similar users based on cosine similarity
+    const topSimilarUsers = await this.findMostSimilarUser(targetUserId);
+
+    if (!topSimilarUsers) {
+      return;
+    }
+    // Extract the UserIds of the top similar users
+    const similarUserIds = topSimilarUsers.map((user) => user.userId);
+
+    // Fetch reviews for doctors rated by any of the top similar users
+    const reviews = await this.review.findAll({
+      where: {
+        UserId: similarUserIds, // Only fetch reviews from the top similar users
+      },
+      attributes: ["DoctorId", "rating", "polarity"],
+      raw: true,
+    });
+
+    // Create a map to store the total ratings, polarity and count for each doctor
+    const doctorRatingsMap = {};
+
+    reviews.forEach((review) => {
+      const { DoctorId, rating, polarity } = review;
+
+      if (!doctorRatingsMap[DoctorId]) {
+        doctorRatingsMap[DoctorId] = {
+          totalRating: 0,
+          totalPolarity: 0,
+          reviewCount: 0,
+        };
+      }
+
+      doctorRatingsMap[DoctorId].totalRating += rating;
+      doctorRatingsMap[DoctorId].totalPolarity += polarity;
+      doctorRatingsMap[DoctorId].reviewCount += 1;
+    });
+
+    // Calculate average rating and polarity for each doctor
+    const doctorRatings = Object.keys(doctorRatingsMap).map((DoctorId) => {
+      const { totalRating, totalPolarity, reviewCount } =
+        doctorRatingsMap[DoctorId];
+      return {
+        DoctorId,
+        avgRating: totalRating / reviewCount,
+        avgPolarity: totalPolarity / reviewCount,
+      };
+    });
+
+    // Sort doctors by highest rating and highest positive polarity
+    const topDoctorIds = doctorRatings
+      .sort((a, b) => {
+        // Sort primarily by rating, then by polarity if ratings are the same
+        if (b.avgRating === a.avgRating) {
+          return b.avgPolarity - a.avgPolarity;
+        }
+        return b.avgRating - a.avgRating;
+      })
+      .slice(0, topNDoctors) // Get the top N doctors
+      .map((doc) => doc.DoctorId); // Extract only DoctorIds
+
+    return topDoctorIds;
+  }
+
+  // Helper function for cosine similarity
+  private cosineSimilarity(vectorA, vectorB) {
+    let dotProduct = 0;
+    let magnitudeA = 0;
+    let magnitudeB = 0;
+
+    const minLength = Math.min(vectorA.length, vectorB.length); // Use minimum length for safety
+
+    for (let i = 0; i < minLength; i++) {
+      dotProduct += vectorA[i] * vectorB[i];
+      magnitudeA += vectorA[i] * vectorA[i];
+      magnitudeB += vectorB[i] * vectorB[i];
+    }
+
+    magnitudeA = Math.sqrt(magnitudeA);
+    magnitudeB = Math.sqrt(magnitudeB);
+
+    if (magnitudeA === 0 || magnitudeB === 0) return 0; // Avoid division by zero
+
+    return dotProduct / (magnitudeA * magnitudeB);
   }
 }

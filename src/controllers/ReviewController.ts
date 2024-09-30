@@ -89,6 +89,8 @@ export default class ReviewController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
+      const Analyzer = natural.SentimentAnalyzer;
+      const stemmer = natural.PorterStemmer;
       const { id } = req.user.payload;
       const { rating, review, doctorId } = req.body;
       const appointment = new AppointmentService({ repository: Appointment });
@@ -104,8 +106,7 @@ export default class ReviewController extends BaseController {
         );
       }
 
-      const Analyzer = natural.SentimentAnalyzer;
-      const stemmer = natural.PorterStemmer;
+      
       const analyzer = new Analyzer("English", stemmer, "afinn");
       const lexData = this.convertToStandard(review);
 
@@ -133,7 +134,6 @@ export default class ReviewController extends BaseController {
     }
   }
 
-  // convert the review into standart english form
   // eg: i don't like it => i do not like it
   private convertToStandard(text: string) {
     const data = text.split(" ");

@@ -8,7 +8,7 @@ const languageFiles = {
   },
 };
 
-export default class SentimentAnalyzer {
+export default class Analyzer {
   // private language: any
   private stemmer: any;
   language: any;

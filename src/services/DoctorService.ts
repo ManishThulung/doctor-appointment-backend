@@ -127,4 +127,36 @@ export class DoctorService<T> extends Repository<T> {
     });
     return doctors;
   }
+
+  async findDoctorsByIds(ids: string[]): Promise<T[]> {
+    const topDoctors = await this.doctor.findAll({
+      where: {
+        id: {
+          [Op.in]: ids, // Ensure we only fetch doctors with these ids
+        },
+      },
+      attributes: [
+        "id",
+        "name",
+        "phone",
+        "email",
+        "avatar",
+        "address",
+        [fn("AVG", col("Review.rating")), "average_rating"], // Calculate the average rating
+      ],
+      include: [
+        {
+          model: Review, // Assuming this.review refers to the Review model
+          attributes: [], // Do not include individual review details, just use for aggregation
+        },
+        {
+          model: Department, // Assuming this.department refers to the Department model
+          as: "Department", // Alias for the Department table
+          attributes: ["id", "name"], // Fetch department id and name
+        },
+      ],
+      group: ["Doctor.id", "Department.id"], // Group by doctor to get the average rating per doctor
+    });
+    return topDoctors;
+  }
 }
