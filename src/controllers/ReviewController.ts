@@ -101,12 +101,11 @@ export default class ReviewController extends BaseController {
       });
       if (!isAllowed) {
         throw new ApiError(
-          "You are not allowd to provide review",
+          "Book an appointment first to review",
           StatusCodes.FORBIDDEN
         );
       }
 
-      
       const analyzer = new Analyzer("English", stemmer, "afinn");
       const lexData = this.convertToStandard(review);
 

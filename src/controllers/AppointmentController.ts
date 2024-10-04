@@ -45,6 +45,10 @@ export default class AppointmentController extends BaseController {
       const { date, timeSlot, doctorId, hospitalId } = req.body;
       const { id, name } = req.user.payload;
 
+      if (!date || !timeSlot || !doctorId || !hospitalId) {
+        throw new ApiError("Validation failed", StatusCodes.BAD_REQUEST);
+      }
+
       const isExistDoctor = await doctor.getOne({
         id: doctorId,
         deletedAt: null,
@@ -414,7 +418,7 @@ export default class AppointmentController extends BaseController {
       }
 
       const approve = await this.appointment.update(
-        { id, deleteAt: null },
+        { id },
         { deleteAt: currentDateTime, status: AppointmentStatus.Approved }
       );
 
