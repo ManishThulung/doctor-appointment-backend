@@ -191,6 +191,12 @@ export default class HospitalController extends BaseController {
 
       const hashedPassword = await this.hash.encryptData(password);
 
+      const fileUrls = req.files?.["gallery"]?.map((file) => {
+        return { ...file };
+      });
+
+      console.log(fileUrls, "fileUrls");
+
       const payload = {
         name,
         email,
@@ -199,10 +205,11 @@ export default class HospitalController extends BaseController {
         pan,
         phone,
         logo: req.files?.["logo"][0],
-        gallery: req.files?.["gallery"],
+        gallery: fileUrls,
         certificate: req.files?.["certificate"],
         AddressId: address.id,
       };
+      console.log(payload, "payload");
       const hospital: HospitalAttributes = await this.hospital.createHospital(
         payload
       );
