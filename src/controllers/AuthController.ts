@@ -8,6 +8,9 @@ import BaseController from "./BaseController";
 import { EncryptDecrypt } from "../utils/EncryptDecrypt";
 import { JwtToken } from "../utils/JwtToken";
 import { EmailService } from "../services/EmailService";
+import axios from "axios";
+import { oauth2Client } from "../utils/outhClient";
+import { Role } from "../types/enums.types";
 
 export default class AuthController extends BaseController {
   private authUser: AuthService<User>;
@@ -182,6 +185,102 @@ export default class AuthController extends BaseController {
         data: me,
       };
       super.send(res, StatusCodes.CREATED);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async oauthSendToken(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      // const code = req.query.code;
+
+      // const url = "https://oauth2.googleapis.com/token";
+
+      // const options: any = {
+      //   code,
+      //   client_id: process.env.CLIENT_ID,
+      //   client_secret: process.env.CLIENT_SECRET,
+      //   redirect_uri: process.env.GOOGLE_OAUTH_REDIRECT_URI,
+      //   grant_type: "authorization_code",
+      // };
+
+      // const queryString = new URLSearchParams(options);
+
+      // const { id_token, access_token } = (
+      //   await axios.post(url, queryString.toString(), {
+      //     headers: {
+      //       "Content-Type": "application/x-www-form-urlencoded",
+      //     },
+      //   })
+      // ).data;
+
+      // const googleUser = (
+      //   await axios.get(
+      //     `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${access_token}`,
+      //     {
+      //       headers: {
+      //         Authorization: `Bearer ${id_token}`,
+      //       },
+      //     }
+      //   )
+      // ).data;
+      // console.log(googleUser, "googleUser")
+      // console.log(id_token, access_token, "id_token, access_token")
+
+      // res.cookie("username", googleUser.given_name);
+      // res.send(googleUser)
+
+      const code = req.query.code;
+
+      const googleRes = await oauth2Client?.getToken(code.toString());
+
+      oauth2Client?.setCredentials(googleRes.tokens);
+
+      const user: any = await axios.get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
+      );
+
+      const existUser = await this.authUser.getOne({
+        email: user?.data?.email,
+        deletedAt: null,
+      });
+
+      let newUser: User;
+      if (!existUser) {
+        const hashedPassword = await this.hash.encryptData(code.toString());
+
+        const payload = {
+          email: user.data.email,
+          name: user.data.name,
+          password: hashedPassword,
+        };
+
+        newUser = await this.authUser.registerUser(payload);
+      }
+
+      const payload = {
+        id: existUser?.id ?? newUser?.id,
+        role: Role.User,
+        email: user.data.email,
+        name: user.data.name,
+      };
+      const accessToken = await this.jwt.generateToken(payload);
+      res.locals.data = {
+        success: true,
+        accessToken,
+        user: { ...payload },
+        message: "Login successful",
+      };
+      res.cookie("token", accessToken, {
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        httpOnly: true,
+        expires: new Date(Date.now() + 86400 * 100000), // 1 day
+      });
+      super.send(res, StatusCodes.OK);
     } catch (err) {
       next(err);
     }
