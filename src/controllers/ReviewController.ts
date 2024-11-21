@@ -10,6 +10,9 @@ import { ReviewService } from "../services/ReviewService";
 import BaseController from "./BaseController";
 import { Appointment } from "../database/models/Appointment";
 import { AppointmentService } from "../services/AppointmentService";
+import { AppointmentStatus } from "../types/enums.types";
+import natural from "natural";
+import { wordDict } from "../utils/LexicalConstant";
 
 export default class ReviewController extends BaseController {
   private review: ReviewService<Review>;
@@ -80,30 +83,38 @@ export default class ReviewController extends BaseController {
     }
   }
 
-
   public async createReview(
     req: any,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
+      const Analyzer = natural.SentimentAnalyzer;
+      const stemmer = natural.PorterStemmer;
       const { id } = req.user.payload;
       const { rating, review, doctorId } = req.body;
       const appointment = new AppointmentService({ repository: Appointment });
       const isAllowed = await appointment.getOne({
         UserId: id,
         DoctorId: doctorId,
+        status: AppointmentStatus.Completed,
       });
       if (!isAllowed) {
         throw new ApiError(
-          "You are not allowd to proved review",
-          StatusCodes.UNAUTHORIZED
+          "Book an appointment first to review",
+          StatusCodes.FORBIDDEN
         );
       }
+
+      const analyzer = new Analyzer("English", stemmer, "afinn");
+      const lexData = this.convertToStandard(review);
+
+      const result = analyzer.getSentiment(lexData.split(" "));
 
       const payload = {
         rating,
         review,
+        polarity: result,
         UserId: id,
         DoctorId: doctorId,
       };
@@ -120,5 +131,19 @@ export default class ReviewController extends BaseController {
     } catch (err) {
       next(err);
     }
+  }
+
+  // eg: i don't like it => i do not like it
+  private convertToStandard(text: string) {
+    const data = text.split(" ");
+    data.forEach((word, index) => {
+      Object.keys(wordDict).forEach((key) => {
+        if (key === word.toLowerCase()) {
+          data[index] = wordDict[key];
+        }
+      });
+    });
+
+    return data.join(" ");
   }
 }

@@ -7,7 +7,7 @@ import { Role } from "../types/enums.types";
 const router = Router();
 
 const uploadDocuments = upload.fields([
-  { name: "avatar", maxCount: 1 },
+  { name: "avatar", maxCount: 2 },
   { name: "certificate", maxCount: 9 },
 ]);
 
@@ -49,12 +49,32 @@ router.post(
   }
 );
 
+router.post("/login", (req: Request, res: Response, next: NextFunction) => {
+  new DoctorController().doctorLogin(req, res, next);
+});
+
 router.get(
   "/count/doctor",
   authenticate,
   authorize([Role.Admin]),
   (req: Request, res: Response, next: NextFunction) => {
     new DoctorController().getDoctorsCount(req, res, next);
+  }
+);
+
+router.get(
+  "/count/doctor/:id",
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().getDoctorsCountOfHospital(req, res, next);
+  }
+);
+
+router.patch(
+  "/approve",
+  authenticate,
+  authorize([Role.Admin]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new DoctorController().approveDoctor(req, res, next);
   }
 );
 

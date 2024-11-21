@@ -66,5 +66,13 @@ router.post(
     new HospitalController().hospitalAdminLogin(req, res, next);
   }
 );
+router.patch(
+  "/approve",
+  authenticate,
+  authorize([Role.SuperAdmin]),
+  (req: Request, res: Response, next: NextFunction) => {
+    new HospitalController().approveHospital(req, res, next);
+  }
+);
 
 export default router;

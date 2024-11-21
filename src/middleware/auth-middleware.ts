@@ -4,9 +4,9 @@ import ApiError from "../abstractions/ApiError";
 import { StatusCodes } from "http-status-codes";
 
 export function authenticate(req: any, res: Response, next: NextFunction) {
-  const { token } = req.cookies;
+  const { token, isLogged } = req.cookies;
 
-  if (!token) {
+  if (!token || !JSON?.parse(isLogged)) {
     throw new ApiError("Unauthorized", StatusCodes.UNAUTHORIZED);
   }
 

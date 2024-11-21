@@ -11,6 +11,7 @@ router.get(
     new AuthController().getProfile(req, res, next);
   }
 );
+
 router.post(
   "/user/login",
   (req: Request, res: Response, next: NextFunction) => {
@@ -29,6 +30,13 @@ router.get(
   "/email/verify",
   (req: Request, res: Response, next: NextFunction) => {
     new AuthController().verifyEmail(req, res, next);
+  }
+);
+
+router.get(
+  "/google/oauth",
+  (req: Request, res: Response, next: NextFunction) => {
+    new AuthController().oauthSendToken(req, res, next);
   }
 );
 
