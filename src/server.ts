@@ -2,6 +2,7 @@ import * as http from "http";
 import { AddressInfo } from "net";
 import App from "./App";
 import logger from "./lib/logger";
+import { PatientReminder } from "./automation/PatientReminder";
 
 const app: App = new App();
 let server: http.Server;
@@ -10,7 +11,7 @@ function serverError(error: NodeJS.ErrnoException): void {
   if (error.syscall !== "listen") {
     throw error;
   }
-  // handle specific error codes here.
+  // handle specific error codes
   throw error;
 }
 
@@ -21,9 +22,11 @@ function serverListening(): void {
   );
 }
 
+const patientReminder = new PatientReminder();
 app
   .init()
   .then(() => {
+    patientReminder.init();
     app.express.set("port", process.env.PORT || 8000);
 
     server = app.httpServer;
@@ -41,5 +44,5 @@ app
 process.on("unhandledRejection", (reason: Error) => {
   logger.error("Unhandled Promise Rejection: reason:", reason.message);
   logger.error(reason.stack);
-  // application specific logging, throwing an error, or other logic here
+  // application specific logging, throwing an error, or other logic
 });
